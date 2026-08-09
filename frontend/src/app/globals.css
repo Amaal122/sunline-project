@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-ink: #131212;
+  --color-lavender: #b19bb2;
+  --color-gray: #f2f0f1;
+  --color-ivory: #f6f7eb;
+}
+
+@layer base {
+  body {
+    @apply bg-ivory text-ink font-sans antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-serif;
+  }
+}
+
+@layer utilities {
+  .sunline-rule {
+    position: relative;
+    height: 1px;
+    width: 56px;
+    background: linear-gradient(90deg, theme("colors.lavender"), transparent);
+  }
+}
