@@ -33,7 +33,7 @@ def set_cart_session_cookie(response: Response, session_key: str) -> None:
         value=session_key,
         httponly=True,
         secure=not settings.DEBUG,
-        samesite="lax",
+        samesite="none" if not settings.DEBUG else "lax",
         max_age=GUEST_CART_TTL_SECONDS,
         path="/",
     )
