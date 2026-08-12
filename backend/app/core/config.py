@@ -23,13 +23,15 @@ class Settings(BaseSettings):
     FRONTEND_ORIGIN: str = "http://localhost:3000"
 
     # Cloudinary
-    CLOUDINARY_CLOUD_NAME: str = ""
-    CLOUDINARY_API_KEY: str = ""
-    CLOUDINARY_API_SECRET: str = ""
+    CLOUDINARY_CLOUD_NAME: str = "nw2xi8wc"
+    CLOUDINARY_API_KEY: str = "931552819359415"
+    CLOUDINARY_API_SECRET: str = "BxaOwQ8z2jERKdKS1Ti2SfSv2xg"
 
     # Email
-    SENDGRID_API_KEY: str = ""
-    EMAIL_FROM: str = "hello@sunline.tn"
+    SENDER_EMAIL: str = "amal.bouguila@supcom.tn"
+    BREVO_API_KEY: str = "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"
+    SENDER_NAME: str = "SUNLINE"
+
 
     # Sentry
     SENTRY_DSN: str = ""

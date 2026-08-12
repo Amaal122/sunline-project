@@ -3,5 +3,8 @@ __pycache__/
 .venv/
 venv/
 .env
+.env.*
+login.json
+test_token.py
 .pytest_cache/
 *.egg-info/
