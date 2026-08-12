@@ -3,7 +3,10 @@ import { CartOut, CartItemIn, CartItemQuantityIn, WishlistOut } from "@/types/ca
 import { UserRegister, UserLogin, UserOut, TokenOut } from "@/types/auth";
 import { CheckoutIn, OrderOut, OrderListItemOut } from "@/types/order";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL =
+  typeof window === "undefined"
+    ? process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL
+    : process.env.NEXT_PUBLIC_API_URL;
 
 // --- Token storage --------------------------------------------------
 // Access token lives in memory + localStorage (survives refresh, lost

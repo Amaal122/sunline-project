@@ -12,7 +12,11 @@ export default function ProductGallery({
   productName: string;
 }) {
   const sorted = [...images].sort((a, b) => a.position - b.position);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const initialIndex = Math.max(
+    sorted.findIndex((img) => img.is_primary),
+    0
+  );
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
   const active = sorted[activeIndex];
 
   if (sorted.length === 0) {

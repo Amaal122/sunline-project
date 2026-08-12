@@ -23,6 +23,35 @@ services:
     volumes:
       - sunline_redis_data:/data
 
+  backend:
+    build: ./backend
+    container_name: sunline-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://sunline:sunline@postgres:5432/sunline_db
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    container_name: sunline-frontend
+    restart: unless-stopped
+    environment:
+      INTERNAL_API_URL: http://backend:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
 volumes:
   sunline_pg_data:
   sunline_redis_data:
