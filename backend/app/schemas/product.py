@@ -59,3 +59,20 @@ class ProductDetailOut(BaseModel):
     care_instructions: Optional[str] = None
     images: list[ProductImageOut] = Field(default_factory=list)
     variants: list[ProductVariantOut] = Field(default_factory=list)
+class ProductCreateIn(BaseModel):
+    name: str
+    slug: str
+    description: Optional[str] = None
+    fit: FitType
+    base_price: Decimal
+    compare_at_price: Optional[Decimal] = None
+    care_instructions: Optional[str] = None
+    is_active: bool = True
+
+
+class ProductVariantCreateIn(BaseModel):
+    color: str
+    size: str
+    sku: str
+    stock_quantity: int = 0
+    price_override: Optional[Decimal] = None

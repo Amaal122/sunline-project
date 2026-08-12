@@ -10,8 +10,14 @@ import app.core.cloudinary_client  # noqa — ensures cloudinary.config() runs
 from app.models.user import User
 from app.models.product import Product
 from app.models.product_image import ProductImage
-from app.schemas.product import ProductImageOut
-
+from app.schemas.product import (
+    ProductImageOut,
+    ProductCreateIn,
+    ProductVariantCreateIn,
+    ProductDetailOut,
+    ProductVariantOut,
+)
+from app.models.product_variant import ProductVariant
 router = APIRouter(prefix="/admin/products", tags=["admin"])
 
 
@@ -72,3 +78,58 @@ def upload_product_image(
     db.refresh(image)
 
     return image
+@router.post("", response_model=ProductDetailOut, status_code=201)
+def create_product(
+    payload: ProductCreateIn,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    existing = db.query(Product).filter(Product.slug == payload.slug).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="A product with this slug already exists")
+
+    product = Product(
+        id=uuid.uuid4(),
+        name=payload.name,
+        slug=payload.slug,
+        description=payload.description,
+        fit=payload.fit,
+        base_price=payload.base_price,
+        compare_at_price=payload.compare_at_price,
+        care_instructions=payload.care_instructions,
+        is_active=payload.is_active,
+    )
+    db.add(product)
+    db.commit()
+    db.refresh(product)
+    return product
+
+
+@router.post("/{product_id}/variants", response_model=ProductVariantOut, status_code=201)
+def create_product_variant(
+    product_id: uuid.UUID,
+    payload: ProductVariantCreateIn,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    product = db.get(Product, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    existing = db.query(ProductVariant).filter(ProductVariant.sku == payload.sku).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="A variant with this SKU already exists")
+
+    variant = ProductVariant(
+        id=uuid.uuid4(),
+        product_id=product_id,
+        color=payload.color,
+        size=payload.size,
+        sku=payload.sku,
+        stock_quantity=payload.stock_quantity,
+        price_override=payload.price_override,
+    )
+    db.add(variant)
+    db.commit()
+    db.refresh(variant)
+    return variant

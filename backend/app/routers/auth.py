@@ -28,9 +28,9 @@ def set_refresh_cookie(response: Response, token: str):
         key=REFRESH_COOKIE_NAME,
         value=token,
         httponly=True,
-        secure=not settings.DEBUG,   # True in prod (HTTPS required)
-        samesite="lax",
-        max_age=60 * 60 * 24 * 30,   # 30 days, matches REFRESH_TOKEN_EXPIRE_DAYS
+        secure=not settings.DEBUG,
+        samesite="none" if not settings.DEBUG else "lax",
+        max_age=60 * 60 * 24 * 30,
         path="/api/auth",
     )
 

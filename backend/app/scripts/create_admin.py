@@ -12,8 +12,9 @@ def create_admin(email: str, password: str, full_name: str) -> None:
         existing = db.query(User).filter(User.email == email).first()
         if existing:
             existing.is_admin = True
+            existing.hashed_password = hash_password(password)
             db.commit()
-            print(f"Existing user {email} promoted to admin.")
+            print(f"Existing user {email} promoted to admin and password reset.")
             return
 
         admin = User(
