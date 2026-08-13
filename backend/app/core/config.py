@@ -31,7 +31,6 @@ class Settings(BaseSettings):
     BREVO_API_KEY: str = ""
     SENDER_NAME: str = "SUNLINE"
 
-
     # Sentry
     SENTRY_DSN: str = ""
 

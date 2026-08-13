@@ -41,17 +41,65 @@ try:
     db.flush()  # so p1.id / p2.id are usable below before commit
 
     variants = [
-        ProductVariant(product_id=p1.id, color="Indigo", size="36", sku="ETO-IND-36", stock_quantity=12),
-        ProductVariant(product_id=p1.id, color="Indigo", size="38", sku="ETO-IND-38", stock_quantity=0),
-        ProductVariant(product_id=p1.id, color="Black", size="36", sku="ETO-BLK-36", stock_quantity=5),
-        ProductVariant(product_id=p2.id, color="Ecru", size="38", sku="LUN-ECR-38", stock_quantity=8),
-        ProductVariant(product_id=p2.id, color="Ecru", size="40", sku="LUN-ECR-40", stock_quantity=3),
+        ProductVariant(
+            product_id=p1.id,
+            color="Indigo",
+            size="36",
+            sku="ETO-IND-36",
+            stock_quantity=12,
+        ),
+        ProductVariant(
+            product_id=p1.id,
+            color="Indigo",
+            size="38",
+            sku="ETO-IND-38",
+            stock_quantity=0,
+        ),
+        ProductVariant(
+            product_id=p1.id,
+            color="Black",
+            size="36",
+            sku="ETO-BLK-36",
+            stock_quantity=5,
+        ),
+        ProductVariant(
+            product_id=p2.id,
+            color="Ecru",
+            size="38",
+            sku="LUN-ECR-38",
+            stock_quantity=8,
+        ),
+        ProductVariant(
+            product_id=p2.id,
+            color="Ecru",
+            size="40",
+            sku="LUN-ECR-40",
+            stock_quantity=3,
+        ),
     ]
 
     images = [
-        ProductImage(product_id=p1.id, url="https://placehold.co/600x800?text=Etoile+1", alt_text="Étoile front", position=0, is_primary=True),
-        ProductImage(product_id=p1.id, url="https://placehold.co/600x800?text=Etoile+2", alt_text="Étoile back", position=1, is_primary=False),
-        ProductImage(product_id=p2.id, url="https://placehold.co/600x800?text=Lune+1", alt_text="Lune front", position=0, is_primary=True),
+        ProductImage(
+            product_id=p1.id,
+            url="https://placehold.co/600x800?text=Etoile+1",
+            alt_text="Étoile front",
+            position=0,
+            is_primary=True,
+        ),
+        ProductImage(
+            product_id=p1.id,
+            url="https://placehold.co/600x800?text=Etoile+2",
+            alt_text="Étoile back",
+            position=1,
+            is_primary=False,
+        ),
+        ProductImage(
+            product_id=p2.id,
+            url="https://placehold.co/600x800?text=Lune+1",
+            alt_text="Lune front",
+            position=0,
+            is_primary=True,
+        ),
     ]
 
     db.add_all(variants + images)

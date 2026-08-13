@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -18,7 +19,11 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    addresses = relationship("Address", back_populates="user", cascade="all, delete-orphan")
+    addresses = relationship(
+        "Address", back_populates="user", cascade="all, delete-orphan"
+    )
     cart = relationship("Cart", back_populates="user", uselist=False)
     orders = relationship("Order", back_populates="user")
-    wishlist_items = relationship("Wishlist", back_populates="user", cascade="all, delete-orphan")
+    wishlist_items = relationship(
+        "Wishlist", back_populates="user", cascade="all, delete-orphan"
+    )

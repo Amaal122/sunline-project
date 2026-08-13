@@ -18,6 +18,7 @@ from app.schemas.product import (
     ProductVariantOut,
 )
 from app.models.product_variant import ProductVariant
+
 router = APIRouter(prefix="/admin/products", tags=["admin"])
 
 
@@ -50,9 +51,9 @@ def upload_product_image(
     ).delete(synchronize_session=False)
 
     if is_primary:
-        db.query(ProductImage).filter(
-            ProductImage.product_id == product_id
-        ).update({"is_primary": False})
+        db.query(ProductImage).filter(ProductImage.product_id == product_id).update(
+            {"is_primary": False}
+        )
 
     # Re-sequence remaining real images to be contiguous (0, 1, 2, ...)
     # so deleted placeholders never leave gaps or stale ordering behind.
@@ -78,6 +79,8 @@ def upload_product_image(
     db.refresh(image)
 
     return image
+
+
 @router.post("", response_model=ProductDetailOut, status_code=201)
 def create_product(
     payload: ProductCreateIn,
@@ -86,7 +89,9 @@ def create_product(
 ):
     existing = db.query(Product).filter(Product.slug == payload.slug).first()
     if existing:
-        raise HTTPException(status_code=400, detail="A product with this slug already exists")
+        raise HTTPException(
+            status_code=400, detail="A product with this slug already exists"
+        )
 
     product = Product(
         id=uuid.uuid4(),
@@ -105,7 +110,9 @@ def create_product(
     return product
 
 
-@router.post("/{product_id}/variants", response_model=ProductVariantOut, status_code=201)
+@router.post(
+    "/{product_id}/variants", response_model=ProductVariantOut, status_code=201
+)
 def create_product_variant(
     product_id: uuid.UUID,
     payload: ProductVariantCreateIn,
@@ -116,9 +123,13 @@ def create_product_variant(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    existing = db.query(ProductVariant).filter(ProductVariant.sku == payload.sku).first()
+    existing = (
+        db.query(ProductVariant).filter(ProductVariant.sku == payload.sku).first()
+    )
     if existing:
-        raise HTTPException(status_code=400, detail="A variant with this SKU already exists")
+        raise HTTPException(
+            status_code=400, detail="A variant with this SKU already exists"
+        )
 
     variant = ProductVariant(
         id=uuid.uuid4(),

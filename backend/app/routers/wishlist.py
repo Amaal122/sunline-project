@@ -20,7 +20,9 @@ def product_list_out(product: Product) -> ProductListOut:
     primary = next((img for img in product.images if img.is_primary), None)
     if not primary and product.images:
         primary = product.images[0]
-    active_variants = [variant for variant in product.variants if variant.stock_quantity > 0]
+    active_variants = [
+        variant for variant in product.variants if variant.stock_quantity > 0
+    ]
     return ProductListOut(
         id=product.id,
         name=product.name,
@@ -41,14 +43,18 @@ def get_wishlist(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    rows = db.execute(
-        select(Wishlist)
-        .where(Wishlist.user_id == current_user.id)
-        .options(
-            selectinload(Wishlist.product).selectinload(Product.images),
-            selectinload(Wishlist.product).selectinload(Product.variants),
+    rows = (
+        db.execute(
+            select(Wishlist)
+            .where(Wishlist.user_id == current_user.id)
+            .options(
+                selectinload(Wishlist.product).selectinload(Product.images),
+                selectinload(Wishlist.product).selectinload(Product.variants),
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     products = [row.product for row in rows if row.product and row.product.is_active]
 
     return WishlistOut(
@@ -57,13 +63,19 @@ def get_wishlist(
     )
 
 
-@router.post("/items/{product_id}", response_model=WishlistOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/items/{product_id}",
+    response_model=WishlistOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def add_wishlist_item(
     product_id: uuid.UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    product = db.execute(select(Product).where(Product.id == product_id)).scalar_one_or_none()
+    product = db.execute(
+        select(Product).where(Product.id == product_id)
+    ).scalar_one_or_none()
     if not product or not product.is_active:
         raise HTTPException(status_code=404, detail="Product not found")
 

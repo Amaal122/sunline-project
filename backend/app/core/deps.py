@@ -36,6 +36,8 @@ def get_current_user(
         raise credentials_exception
 
     return user
+
+
 def get_current_admin_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
@@ -45,7 +47,6 @@ def get_current_admin_user(
             detail="Admin access required",
         )
     return current_user
-
 
 
 def get_optional_current_user(

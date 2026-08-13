@@ -1,5 +1,13 @@
 import uuid
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Response, Request
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    status,
+    Response,
+    Request,
+)
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -36,8 +44,14 @@ def set_refresh_cookie(response: Response, token: str):
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def register(payload: UserRegister, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    existing = db.execute(select(User).where(User.email == payload.email)).scalar_one_or_none()
+def register(
+    payload: UserRegister,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    existing = db.execute(
+        select(User).where(User.email == payload.email)
+    ).scalar_one_or_none()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
@@ -58,8 +72,15 @@ def register(payload: UserRegister, background_tasks: BackgroundTasks, db: Sessi
 
 
 @router.post("/login", response_model=TokenOut)
-def login(payload: UserLogin, request: Request, response: Response, db: Session = Depends(get_db)):
-    user = db.execute(select(User).where(User.email == payload.email)).scalar_one_or_none()
+def login(
+    payload: UserLogin,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    user = db.execute(
+        select(User).where(User.email == payload.email)
+    ).scalar_one_or_none()
 
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect email or password")

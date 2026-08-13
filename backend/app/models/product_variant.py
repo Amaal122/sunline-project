@@ -4,12 +4,21 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
+
 class ProductVariant(Base):
     __tablename__ = "product_variants"
-    __table_args__ = (UniqueConstraint("product_id", "color", "size", name="uq_variant_product_color_size"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "product_id", "color", "size", name="uq_variant_product_color_size"
+        ),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
+    product_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("products.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     color = Column(String, nullable=False)
     size = Column(String, nullable=False)
     sku = Column(String, unique=True, nullable=False)

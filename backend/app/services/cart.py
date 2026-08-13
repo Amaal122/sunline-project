@@ -63,12 +63,20 @@ def read_guest_cart(session_key: str | None) -> dict[str, int]:
     try:
         raw_items = redis_client.hgetall(guest_cart_key(session_key))
     except RedisError as exc:
-        raise HTTPException(status_code=503, detail="Guest cart is temporarily unavailable") from exc
+        raise HTTPException(
+            status_code=503, detail="Guest cart is temporarily unavailable"
+        ) from exc
 
-    return {variant_id: int(quantity) for variant_id, quantity in raw_items.items() if int(quantity) > 0}
+    return {
+        variant_id: int(quantity)
+        for variant_id, quantity in raw_items.items()
+        if int(quantity) > 0
+    }
 
 
-def write_guest_cart_item(session_key: str, variant_id: uuid.UUID, quantity: int) -> None:
+def write_guest_cart_item(
+    session_key: str, variant_id: uuid.UUID, quantity: int
+) -> None:
     key = guest_cart_key(session_key)
     try:
         if quantity <= 0:
@@ -77,10 +85,14 @@ def write_guest_cart_item(session_key: str, variant_id: uuid.UUID, quantity: int
             redis_client.hset(key, str(variant_id), quantity)
         redis_client.expire(key, GUEST_CART_TTL_SECONDS)
     except RedisError as exc:
-        raise HTTPException(status_code=503, detail="Guest cart is temporarily unavailable") from exc
+        raise HTTPException(
+            status_code=503, detail="Guest cart is temporarily unavailable"
+        ) from exc
 
 
-def increment_guest_cart_item(session_key: str, variant_id: uuid.UUID, quantity: int) -> None:
+def increment_guest_cart_item(
+    session_key: str, variant_id: uuid.UUID, quantity: int
+) -> None:
     key = guest_cart_key(session_key)
     try:
         next_quantity = redis_client.hincrby(key, str(variant_id), quantity)
@@ -88,7 +100,9 @@ def increment_guest_cart_item(session_key: str, variant_id: uuid.UUID, quantity:
             redis_client.hdel(key, str(variant_id))
         redis_client.expire(key, GUEST_CART_TTL_SECONDS)
     except RedisError as exc:
-        raise HTTPException(status_code=503, detail="Guest cart is temporarily unavailable") from exc
+        raise HTTPException(
+            status_code=503, detail="Guest cart is temporarily unavailable"
+        ) from exc
 
 
 def clear_guest_cart(session_key: str | None) -> None:
@@ -134,7 +148,9 @@ def get_variant_or_404(db: Session, variant_id: uuid.UUID) -> ProductVariant:
 
 def assert_stock(variant: ProductVariant, quantity: int) -> None:
     if quantity > variant.stock_quantity:
-        raise HTTPException(status_code=400, detail="Requested quantity is not available")
+        raise HTTPException(
+            status_code=400, detail="Requested quantity is not available"
+        )
 
 
 def primary_image(product) -> ProductImageOut | None:
@@ -165,7 +181,11 @@ def line_from_variant(variant: ProductVariant, quantity: int) -> CartLineOut:
 
 def cart_out_from_lines(lines: list[CartLineOut]) -> CartOut:
     subtotal = sum((line.line_total for line in lines), Decimal("0.00"))
-    delivery_fee = Decimal("0.00") if subtotal == 0 or subtotal >= FREE_DELIVERY_THRESHOLD else DELIVERY_FEE
+    delivery_fee = (
+        Decimal("0.00")
+        if subtotal == 0 or subtotal >= FREE_DELIVERY_THRESHOLD
+        else DELIVERY_FEE
+    )
     return CartOut(
         items=lines,
         subtotal=subtotal,
@@ -190,11 +210,16 @@ def build_guest_cart_out(db: Session, session_key: str | None) -> CartOut:
         return cart_out_from_lines([])
 
     variant_ids = [uuid.UUID(variant_id) for variant_id in items]
-    variants = db.execute(
-        select(ProductVariant)
-        .where(ProductVariant.id.in_(variant_ids))
-        .options(selectinload(ProductVariant.product).selectinload(Product.images))
-    ).scalars().unique().all()
+    variants = (
+        db.execute(
+            select(ProductVariant)
+            .where(ProductVariant.id.in_(variant_ids))
+            .options(selectinload(ProductVariant.product).selectinload(Product.images))
+        )
+        .scalars()
+        .unique()
+        .all()
+    )
 
     lines = [
         line_from_variant(variant, min(items[str(variant.id)], variant.stock_quantity))
@@ -204,7 +229,9 @@ def build_guest_cart_out(db: Session, session_key: str | None) -> CartOut:
     return cart_out_from_lines(lines)
 
 
-def upsert_user_cart_item(db: Session, user: User, variant: ProductVariant, quantity_delta: int) -> Cart:
+def upsert_user_cart_item(
+    db: Session, user: User, variant: ProductVariant, quantity_delta: int
+) -> Cart:
     cart = get_user_cart(db, user)
     item = db.execute(
         select(CartItem).where(
@@ -221,14 +248,20 @@ def upsert_user_cart_item(db: Session, user: User, variant: ProductVariant, quan
     if item:
         item.quantity = next_quantity
     else:
-        db.add(CartItem(cart_id=cart.id, product_variant_id=variant.id, quantity=next_quantity))
+        db.add(
+            CartItem(
+                cart_id=cart.id, product_variant_id=variant.id, quantity=next_quantity
+            )
+        )
 
     db.commit()
     db.refresh(cart)
     return get_user_cart(db, user)
 
 
-def set_user_cart_item_quantity(db: Session, user: User, variant: ProductVariant, quantity: int) -> Cart:
+def set_user_cart_item_quantity(
+    db: Session, user: User, variant: ProductVariant, quantity: int
+) -> Cart:
     cart = get_user_cart(db, user)
     item = db.execute(
         select(CartItem).where(
@@ -245,27 +278,42 @@ def set_user_cart_item_quantity(db: Session, user: User, variant: ProductVariant
         if item:
             item.quantity = quantity
         else:
-            db.add(CartItem(cart_id=cart.id, product_variant_id=variant.id, quantity=quantity))
+            db.add(
+                CartItem(
+                    cart_id=cart.id, product_variant_id=variant.id, quantity=quantity
+                )
+            )
 
     db.commit()
     return get_user_cart(db, user)
 
 
-def merge_guest_cart_into_user_cart(db: Session, user: User, session_key: str | None) -> None:
+def merge_guest_cart_into_user_cart(
+    db: Session, user: User, session_key: str | None
+) -> None:
     guest_items = read_guest_cart(session_key)
     if not guest_items:
         return
 
     cart = get_user_cart(db, user)
     variant_ids = [uuid.UUID(variant_id) for variant_id in guest_items]
-    variants = db.execute(
-        select(ProductVariant)
-        .where(ProductVariant.id.in_(variant_ids))
-        .options(selectinload(ProductVariant.product))
-    ).scalars().unique().all()
+    variants = (
+        db.execute(
+            select(ProductVariant)
+            .where(ProductVariant.id.in_(variant_ids))
+            .options(selectinload(ProductVariant.product))
+        )
+        .scalars()
+        .unique()
+        .all()
+    )
 
     for variant in variants:
-        if not variant.product or not variant.product.is_active or variant.stock_quantity <= 0:
+        if (
+            not variant.product
+            or not variant.product.is_active
+            or variant.stock_quantity <= 0
+        ):
             continue
 
         requested = guest_items[str(variant.id)]

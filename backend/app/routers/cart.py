@@ -49,7 +49,9 @@ def add_cart_item(
     if current_user:
         from app.services.cart import upsert_user_cart_item
 
-        return build_user_cart_out(upsert_user_cart_item(db, current_user, variant, payload.quantity))
+        return build_user_cart_out(
+            upsert_user_cart_item(db, current_user, variant, payload.quantity)
+        )
 
     session_key = get_or_create_session_key(request, response)
     current_items = read_guest_cart(session_key)
@@ -71,7 +73,9 @@ def update_cart_item(
     variant = get_variant_or_404(db, variant_id)
 
     if current_user:
-        return build_user_cart_out(set_user_cart_item_quantity(db, current_user, variant, payload.quantity))
+        return build_user_cart_out(
+            set_user_cart_item_quantity(db, current_user, variant, payload.quantity)
+        )
 
     session_key = get_or_create_session_key(request, response)
     assert_stock(variant, payload.quantity)
@@ -90,7 +94,9 @@ def remove_cart_item(
     variant = get_variant_or_404(db, variant_id)
 
     if current_user:
-        return build_user_cart_out(set_user_cart_item_quantity(db, current_user, variant, 0))
+        return build_user_cart_out(
+            set_user_cart_item_quantity(db, current_user, variant, 0)
+        )
 
     session_key = get_or_create_session_key(request, response)
     write_guest_cart_item(session_key, variant.id, 0)

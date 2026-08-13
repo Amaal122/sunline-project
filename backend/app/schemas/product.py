@@ -59,6 +59,8 @@ class ProductDetailOut(BaseModel):
     care_instructions: Optional[str] = None
     images: list[ProductImageOut] = Field(default_factory=list)
     variants: list[ProductVariantOut] = Field(default_factory=list)
+
+
 class ProductCreateIn(BaseModel):
     name: str
     slug: str

@@ -6,12 +6,14 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
 
+
 class FitType(str, enum.Enum):
     straight = "Straight"
     wide_leg = "Wide Leg"
     skinny = "Skinny"
     mom_jeans = "Mom Jeans"
     flare = "Flare"
+
 
 class Product(Base):
     __tablename__ = "products"
@@ -28,6 +30,15 @@ class Product(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    variants = relationship("ProductVariant", back_populates="product", cascade="all, delete-orphan")
-    images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan", order_by="ProductImage.position")
-    wishlisted_by = relationship("Wishlist", back_populates="product", cascade="all, delete-orphan")
+    variants = relationship(
+        "ProductVariant", back_populates="product", cascade="all, delete-orphan"
+    )
+    images = relationship(
+        "ProductImage",
+        back_populates="product",
+        cascade="all, delete-orphan",
+        order_by="ProductImage.position",
+    )
+    wishlisted_by = relationship(
+        "Wishlist", back_populates="product", cascade="all, delete-orphan"
+    )

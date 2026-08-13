@@ -41,7 +41,9 @@ def _generate_order_number(db: Session) -> str:
         if not exists:
             return candidate
     # Astronomically unlikely, but fail loudly rather than silently collide
-    raise HTTPException(status_code=500, detail="Could not generate a unique order number")
+    raise HTTPException(
+        status_code=500, detail="Could not generate a unique order number"
+    )
 
 
 def _resolve_checkout_lines(
@@ -71,11 +73,15 @@ def _resolve_checkout_lines(
             raise EmptyCartError()
 
         variant_ids = [uuid.UUID(vid) for vid in guest_items]
-        active_variants = db.execute(
-            select(ProductVariant.id)
-            .join(Product)
-            .where(ProductVariant.id.in_(variant_ids), Product.is_active.is_(True))
-        ).scalars().all()
+        active_variants = (
+            db.execute(
+                select(ProductVariant.id)
+                .join(Product)
+                .where(ProductVariant.id.in_(variant_ids), Product.is_active.is_(True))
+            )
+            .scalars()
+            .all()
+        )
         quantities_by_variant_id = {
             vid: guest_items[str(vid)] for vid in active_variants
         }
@@ -85,14 +91,20 @@ def _resolve_checkout_lines(
     # Single locked query for every variant in the order — holds row
     # locks until commit/rollback, so a concurrent checkout on the same
     # variant blocks here instead of racing past assert_stock.
-    locked_variants = db.execute(
-        select(ProductVariant)
-        .where(ProductVariant.id.in_(quantities_by_variant_id.keys()))
-        .options(selectinload(ProductVariant.product))
-        .with_for_update()
-    ).scalars().all()
+    locked_variants = (
+        db.execute(
+            select(ProductVariant)
+            .where(ProductVariant.id.in_(quantities_by_variant_id.keys()))
+            .options(selectinload(ProductVariant.product))
+            .with_for_update()
+        )
+        .scalars()
+        .all()
+    )
 
-    return [(variant, quantities_by_variant_id[variant.id]) for variant in locked_variants]
+    return [
+        (variant, quantities_by_variant_id[variant.id]) for variant in locked_variants
+    ]
 
 
 def create_order_from_cart(
@@ -107,10 +119,15 @@ def create_order_from_cart(
         assert_stock(variant, quantity)
 
     subtotal = sum(
-        ((variant.price_override or variant.product.base_price) * quantity for variant, quantity in lines),
+        (
+            (variant.price_override or variant.product.base_price) * quantity
+            for variant, quantity in lines
+        ),
         Decimal("0.00"),
     )
-    delivery_fee = Decimal("0.00") if subtotal >= FREE_DELIVERY_THRESHOLD else DELIVERY_FEE
+    delivery_fee = (
+        Decimal("0.00") if subtotal >= FREE_DELIVERY_THRESHOLD else DELIVERY_FEE
+    )
     total = subtotal + delivery_fee
 
     order = Order(
@@ -146,7 +163,9 @@ def create_order_from_cart(
                     quantity=quantity,
                 )
             )
-            variant.stock_quantity -= quantity  # deduct stock atomically with order creation
+            variant.stock_quantity -= (
+                quantity  # deduct stock atomically with order creation
+            )
 
         db.flush()
 
@@ -159,7 +178,9 @@ def create_order_from_cart(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Order could not be completed — please try again")
+        raise HTTPException(
+            status_code=409, detail="Order could not be completed — please try again"
+        )
     except Exception:
         db.rollback()
         raise
@@ -169,9 +190,7 @@ def create_order_from_cart(
     # of when the request-scoped session eventually closes, so response
     # serialization never depends on session lifecycle timing.
     return db.execute(
-        select(Order)
-        .where(Order.id == order.id)
-        .options(selectinload(Order.items))
+        select(Order).where(Order.id == order.id).options(selectinload(Order.items))
     ).scalar_one()
 
 
@@ -188,7 +207,9 @@ def list_user_orders(db: Session, user: User) -> list[Order]:
     )
 
 
-def get_order_by_number(db: Session, order_number: str, current_user: User | None) -> Order:
+def get_order_by_number(
+    db: Session, order_number: str, current_user: User | None
+) -> Order:
     order = db.execute(
         select(Order)
         .where(Order.order_number == order_number)

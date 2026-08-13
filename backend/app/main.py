@@ -9,6 +9,7 @@ from app.routers import cart
 from app.routers import wishlist
 from app.routers import orders
 from app.routers import admin_products
+
 app = FastAPI(
     title=settings.APP_NAME,
     version="0.1.0",

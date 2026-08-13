@@ -1,5 +1,4 @@
 import httpx
-from fastapi import HTTPException
 
 from app.core.config import settings
 from app.models.order import Order
@@ -27,7 +26,9 @@ def _send_email(to_email: str, to_name: str, subject: str, html_content: str) ->
         with httpx.Client(timeout=10.0) as client:
             response = client.post(BREVO_API_URL, headers=headers, json=payload)
             response.raise_for_status()
-            print(f"[email] Sent '{subject}' to {to_email} — status {response.status_code}")
+            print(
+                f"[email] Sent '{subject}' to {to_email} — status {response.status_code}"
+            )
     except httpx.HTTPError as exc:
         print(f"[email] Failed to send '{subject}' to {to_email}: {exc}")
 

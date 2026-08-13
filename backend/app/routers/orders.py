@@ -6,7 +6,11 @@ from app.core.deps import get_current_user, get_optional_current_user
 from app.models.user import User
 from app.schemas.order import CheckoutIn, OrderListItemOut, OrderOut
 from app.services.email import send_order_confirmation_email
-from app.services.order import create_order_from_cart, get_order_by_number, list_user_orders
+from app.services.order import (
+    create_order_from_cart,
+    get_order_by_number,
+    list_user_orders,
+)
 
 router = APIRouter(tags=["orders"])
 

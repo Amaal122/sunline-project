@@ -34,7 +34,9 @@ def create_admin(email: str, password: str, full_name: str) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: python -m app.scripts.create_admin <email> <password> <full_name>")
+        print(
+            "Usage: python -m app.scripts.create_admin <email> <password> <full_name>"
+        )
         sys.exit(1)
 
     create_admin(sys.argv[1], sys.argv[2], sys.argv[3])

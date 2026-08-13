@@ -1,7 +1,7 @@
 from typing import Literal, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, selectinload
-from sqlalchemy import select,text
+from sqlalchemy import select, text
 from app.core.database import get_db
 from app.models.product import Product, FitType
 from app.models.product_variant import ProductVariant
@@ -22,9 +22,13 @@ def list_products(
     in_stock: bool = Query(False),
     sort: Literal["featured", "price-asc", "price-desc"] = Query("featured"),
 ):
-    query = select(Product).where(Product.is_active == True).options(
-        selectinload(Product.images),
-        selectinload(Product.variants),
+    query = (
+        select(Product)
+        .where(Product.is_active.is_(True))
+        .options(
+            selectinload(Product.images),
+            selectinload(Product.variants),
+        )
     )
 
     if fit:
@@ -50,7 +54,9 @@ def list_products(
         # ranks above a match only in `description` (weight B).
         if sort == "featured":
             query = query.order_by(
-                text("ts_rank(products.search_vector, plainto_tsquery('fr_unaccent', :search_q)) DESC")
+                text(
+                    "ts_rank(products.search_vector, plainto_tsquery('fr_unaccent', :search_q)) DESC"
+                )
             )
         query = query.params(search_q=q_clean)
     if in_stock:
@@ -67,7 +73,9 @@ def list_products(
         primary = next((img for img in p.images if img.is_primary), None)
         if not primary and p.images:
             primary = p.images[0]
-        active_variants = [variant for variant in p.variants if variant.stock_quantity > 0]
+        active_variants = [
+            variant for variant in p.variants if variant.stock_quantity > 0
+        ]
         results.append(
             ProductListOut(
                 id=p.id,
@@ -77,10 +85,14 @@ def list_products(
                 base_price=p.base_price,
                 compare_at_price=p.compare_at_price,
                 is_active=p.is_active,
-                primary_image=ProductImageOut.model_validate(primary) if primary else None,
+                primary_image=(
+                    ProductImageOut.model_validate(primary) if primary else None
+                ),
                 available_colors=sorted({variant.color for variant in active_variants}),
                 available_sizes=sorted({variant.size for variant in active_variants}),
-                first_available_variant_id=active_variants[0].id if active_variants else None,
+                first_available_variant_id=(
+                    active_variants[0].id if active_variants else None
+                ),
             )
         )
     return results
@@ -88,9 +100,13 @@ def list_products(
 
 @router.get("/{slug}", response_model=ProductDetailOut)
 def get_product(slug: str, db: Session = Depends(get_db)):
-    query = select(Product).where(Product.slug == slug).options(
-        selectinload(Product.images),
-        selectinload(Product.variants),
+    query = (
+        select(Product)
+        .where(Product.slug == slug)
+        .options(
+            selectinload(Product.images),
+            selectinload(Product.variants),
+        )
     )
     product = db.execute(query).scalar_one_or_none()
 
