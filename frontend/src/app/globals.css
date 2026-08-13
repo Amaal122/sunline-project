@@ -2017,12 +2017,12 @@
 }
 
 @media (max-width: 900px) {
-  .wrap {
+  body.wrap {
     padding-left: 20px;
     padding-right: 20px;
   }
 
-  .nav-row {
+  body .nav-row {
     padding-left: 20px;
     padding-right: 20px;
   }
@@ -2194,7 +2194,7 @@
 /* Page hero (shared by Contact, FAQ) */
 .page-hero {
   text-align: center;
-  padding: 60px 0 40px;
+  padding: 60px 20px 40px;
 }
 .page-hero h1 { margin: 12px 0; }
 

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport  } from "next";
 import "./globals.css";
 import { AppStateProvider } from "@/context/AppStateContext";
 import Header from "@/components/layout/Header";
@@ -8,6 +8,10 @@ export const metadata: Metadata = {
   title: "SUNLINE - Premium Denim, Made in Tunisia",
   description:
     "Premium jeans designed for women who move with confidence. Made in Tunisia.",
+};
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
