@@ -39,7 +39,7 @@ jobs:
         run: python -c "from app.main import app; print('App imported successfully')"
 
       - name: Run tests (if any exist)
-        run: pytest --collect-only -q
+        run: pytest --collect-only -q || [$? -eq 5]
 
   frontend:
     name: Frontend — install, lint, build
