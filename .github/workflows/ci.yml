@@ -41,6 +41,7 @@ jobs:
       - name: Run tests (if any exist)
         shell: bash
         run: |
+          set +e
           pytest --collect-only -q
           exit_code=$?
           if [ $exit_code -eq 5 ]; then
