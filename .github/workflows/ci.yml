@@ -39,7 +39,15 @@ jobs:
         run: python -c "from app.main import app; print('App imported successfully')"
 
       - name: Run tests (if any exist)
-        run: pytest --collect-only -q || [$? -eq 5]
+        shell: bash
+        run: |
+          pytest --collect-only -q
+          exit_code=$?
+          if [ $exit_code -eq 5 ]; then
+            echo "No tests collected yet — skipping."
+            exit 0
+          fi
+          exit $exit_code
 
   frontend:
     name: Frontend — install, lint, build
