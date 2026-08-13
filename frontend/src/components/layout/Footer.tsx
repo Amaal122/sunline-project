@@ -36,7 +36,6 @@ export default function Footer() {
             links={[
               ["About SUNLINE", "/about"],
               ["Our Stores", "/contact"],
-              ["Careers", "/about"],
               ["Sustainability", "/about"],
             ]}
           />

@@ -1,5 +1,13 @@
-import ComingSoon from "@/components/layout/ComingSoon";
-export const metadata = { title: "FAQ — SUNLINE" };
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import FaqContent from "@/components/faq/FaqContent";
+
+export const metadata: Metadata = { title: "FAQ — SUNLINE" };
+
 export default function FaqPage() {
-  return <ComingSoon title="FAQ, Shipping & Returns" phase="a later content phase" />;
+  return (
+    <Suspense fallback={null}>
+      <FaqContent />
+    </Suspense>
+  );
 }
