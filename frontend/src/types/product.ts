@@ -3,6 +3,7 @@ export type FitType = "Straight" | "Wide Leg" | "Skinny" | "Mom Jeans" | "Flare"
 export interface ProductImageOut {
   id: string;
   url: string;
+  cloudinary_public_id: string | null;
   alt_text: string | null;
   position: number;
   is_primary: boolean;

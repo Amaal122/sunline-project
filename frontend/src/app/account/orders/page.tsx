@@ -41,7 +41,7 @@ export default function MyOrdersPage() {
   // ── Loading skeleton ────────────────────────────────────────────────────
   if (loading || !isLoggedIn) {
     return (
-      <div className="wrap" style={{ padding: "60px 0 100px" }}>
+      <div className="wrap" style={{ paddingTop: 60, paddingBottom: 100 }}>
         <nav style={{ marginBottom: 32, fontSize: 12, color: "var(--ink-dim)" }}>
           <Link href="/account">Account</Link>
           <span style={{ margin: "0 8px" }}>›</span>
@@ -69,7 +69,7 @@ export default function MyOrdersPage() {
   // ── Empty state ──────────────────────────────────────────────────────────
   if (orders && orders.length === 0) {
     return (
-      <div className="wrap" style={{ padding: "60px 0 100px" }}>
+      <div className="wrap" style={{ paddingTop: 60, paddingBottom: 100 }}>
         <nav style={{ marginBottom: 32, fontSize: 12, color: "var(--ink-dim)" }}>
           <Link href="/account">Account</Link>
           <span style={{ margin: "0 8px" }}>›</span>
@@ -90,7 +90,7 @@ export default function MyOrdersPage() {
 
   // ── Order list ───────────────────────────────────────────────────────────
   return (
-    <div className="wrap" style={{ padding: "60px 0 100px" }}>
+    <div className="wrap" style={{ paddingTop: 60, paddingBottom: 100 }}>
       {/* Breadcrumb */}
       <nav style={{ marginBottom: 32, fontSize: 12, color: "var(--ink-dim)" }}>
         <Link href="/account">Account</Link>

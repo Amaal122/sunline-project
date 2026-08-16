@@ -2,6 +2,14 @@ import { ProductListOut, ProductDetailOut, FitType, SortOption } from "@/types/p
 import { CartOut, CartItemIn, CartItemQuantityIn, WishlistOut } from "@/types/cart";
 import { UserRegister, UserLogin, UserOut, TokenOut } from "@/types/auth";
 import { CheckoutIn, OrderOut, OrderListItemOut } from "@/types/order";
+import {
+  ProductCreateIn,
+  ProductUpdateIn,
+  ProductVariantCreateIn,
+  ProductVariantUpdateIn,
+  AdminOrderListItemOut,
+  OrderStatusUpdateIn,
+} from "@/types/admin";
 
 const API_URL =
   typeof window === "undefined"
@@ -9,10 +17,6 @@ const API_URL =
     : process.env.NEXT_PUBLIC_API_URL;
 
 // --- Token storage --------------------------------------------------
-// Access token lives in memory + localStorage (survives refresh, lost
-// on tab close is NOT true for localStorage — it persists). The
-// refresh token itself is never touched here: it's an httpOnly cookie
-// set by the backend, invisible to JS by design (that's the point).
 const TOKEN_KEY = "sunline_access_token";
 
 export function getAccessToken(): string | null {
@@ -53,10 +57,8 @@ async function apiFetch<T>(
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
     headers,
-    credentials: "include", // sends the refresh-token cookie on every call
-    cache: "no-store", // ← add this: product/cart/order data changes via admin
-                      //   uploads and checkout, so it must never be cached
-                      //   by Next.js's fetch data cache
+    credentials: "include",
+    cache: "no-store",
   });
 
   if (!res.ok) {
@@ -70,7 +72,6 @@ async function apiFetch<T>(
     throw new ApiError(res.status, detail);
   }
 
-  // 204/some DELETEs may have no body
   const text = await res.text();
   return text ? JSON.parse(text) : (undefined as T);
 }
@@ -81,7 +82,7 @@ export interface ProductFilters {
   min_price?: number;
   max_price?: number;
   color?: string;
-  size?: string; // string, matching the API — pass "36" not 36
+  size?: string;
   q?: string;
   in_stock?: boolean;
   sort?: SortOption;
@@ -132,7 +133,7 @@ export async function refreshToken() {
   return data;
 }
 
-// --- Cart (requires auth — see note below) --------------------------
+// --- Cart --------------------------
 export function getCart() {
   return apiFetch<CartOut>("/api/cart", { auth: true });
 }
@@ -160,7 +161,7 @@ export function removeCartItem(variantId: string) {
   });
 }
 
-// --- Wishlist (requires auth) ----------------------------------------
+// --- Wishlist ----------------------------------------
 export function getWishlist() {
   return apiFetch<WishlistOut>("/api/wishlist", { auth: true });
 }
@@ -179,25 +180,149 @@ export function removeWishlistItem(productId: string) {
   });
 }
 
-
 // --- Orders ----------------------------------------------------------
-/** POST /api/orders — works for both guests (no auth header) and logged-in users */
 export function checkout(payload: CheckoutIn) {
   return apiFetch<OrderOut>("/api/orders", {
     method: "POST",
-    auth: true, // sends token if available, harmless if not
+    auth: true,
     body: JSON.stringify(payload),
   });
 }
 
-/** GET /api/orders — requires auth; returns slim list items */
 export function getMyOrders() {
   return apiFetch<OrderListItemOut[]>("/api/orders", { auth: true });
 }
 
-/** GET /api/orders/{order_number} — no auth header needed for guest orders */
 export function getOrderByNumber(orderNumber: string) {
   return apiFetch<OrderOut>(`/api/orders/${orderNumber}`);
+}
+
+// =======================================================================
+// ADMIN
+// All admin calls need auth: true — get_current_admin_user requires a
+// valid Bearer token belonging to a user with is_admin = true. A 403
+// here means "logged in but not an admin," a 401 means "not logged in
+// at all" — the admin layout distinguishes between these.
+// =======================================================================
+
+export function adminListProducts() {
+  return apiFetch<ProductDetailOut[]>("/api/admin/products", { auth: true });
+}
+
+export function adminGetProduct(productId: string) {
+  return apiFetch<ProductDetailOut>(`/api/admin/products/${productId}`, { auth: true });
+}
+
+export function adminCreateProduct(payload: ProductCreateIn) {
+  return apiFetch<ProductDetailOut>("/api/admin/products", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(payload),
+  });
+}
+
+export function adminUpdateProduct(productId: string, payload: ProductUpdateIn) {
+  return apiFetch<ProductDetailOut>(`/api/admin/products/${productId}`, {
+    method: "PATCH",
+    auth: true,
+    body: JSON.stringify(payload),
+  });
+}
+
+export function adminDeleteProduct(productId: string) {
+  return apiFetch<void>(`/api/admin/products/${productId}`, {
+    method: "DELETE",
+    auth: true,
+  });
+}
+
+export function adminCreateVariant(productId: string, payload: ProductVariantCreateIn) {
+  return apiFetch(`/api/admin/products/${productId}/variants`, {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(payload),
+  });
+}
+
+export function adminUpdateVariant(
+  productId: string,
+  variantId: string,
+  payload: ProductVariantUpdateIn
+) {
+  return apiFetch(`/api/admin/products/${productId}/variants/${variantId}`, {
+    method: "PATCH",
+    auth: true,
+    body: JSON.stringify(payload),
+  });
+}
+
+export function adminDeleteVariant(productId: string, variantId: string) {
+  return apiFetch<void>(`/api/admin/products/${productId}/variants/${variantId}`, {
+    method: "DELETE",
+    auth: true,
+  });
+}
+
+/**
+ * Image upload needs FormData, not JSON — deliberately bypasses
+ * apiFetch, which always sets Content-Type: application/json. Setting
+ * Content-Type manually on a FormData request breaks it: the browser
+ * needs to set its own multipart boundary string, which it can only
+ * do if Content-Type is left unset.
+ */
+export async function adminUploadProductImage(
+  productId: string,
+  file: File,
+  options: { altText?: string; isPrimary?: boolean } = {}
+) {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (options.altText) formData.append("alt_text", options.altText);
+  formData.append("is_primary", String(options.isPrimary ?? false));
+
+  const token = getAccessToken();
+  const res = await fetch(`${API_URL}/api/admin/products/${productId}/images`, {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      detail = body.detail ? JSON.stringify(body.detail) : detail;
+    } catch {
+      // not JSON — keep statusText
+    }
+    throw new ApiError(res.status, detail);
+  }
+
+  return res.json();
+}
+
+export function adminDeleteProductImage(productId: string, imageId: string) {
+  return apiFetch<void>(`/api/admin/products/${productId}/images/${imageId}`, {
+    method: "DELETE",
+    auth: true,
+  });
+}
+
+export function adminListOrders() {
+  return apiFetch<AdminOrderListItemOut[]>("/api/admin/orders", { auth: true });
+}
+
+export function adminGetOrder(orderNumber: string) {
+  return apiFetch<OrderOut>(`/api/admin/orders/${orderNumber}`, { auth: true });
+}
+
+export function adminUpdateOrderStatus(orderNumber: string, payload: OrderStatusUpdateIn) {
+  return apiFetch<OrderOut>(`/api/admin/orders/${orderNumber}/status`, {
+    method: "PATCH",
+    auth: true,
+    body: JSON.stringify(payload),
+  });
 }
 
 export { ApiError };

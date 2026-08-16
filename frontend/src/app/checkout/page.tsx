@@ -141,14 +141,14 @@ export default function CheckoutPage() {
 
   if (cartLoading) {
     return (
-      <div className="wrap" style={{ padding: "80px 0", textAlign: "center" }}>
+      <div className="wrap" style={{ paddingTop: 80, paddingBottom: 80, textAlign: "center" }}>
         Loading…
       </div>
     );
   }
 
   return (
-    <div className="wrap" style={{ padding: "48px 0 100px" }}>
+    <div className="wrap" style={{ paddingTop: 48, paddingBottom: 100 }}>
       {/* Breadcrumb */}
       <nav style={{ marginBottom: 32, fontSize: 12, color: "var(--ink-dim)" }}>
         <Link href="/cart">Bag</Link>

@@ -9,6 +9,7 @@ interface AppState {
   cartCount: number;
   wishlistIds: string[];
   isLoggedIn: boolean;
+  authChecked: boolean;
   refreshAuth: () => Promise<void>;
   refreshCart: () => Promise<void>;
   refreshWishlist: () => Promise<void>;
@@ -21,6 +22,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserOut | null>(null);
   const [cartCount, setCartCount] = useState(0);
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
+  const [authChecked, setAuthChecked] = useState(false);
 
   const refreshAuth = useCallback(async () => {
     if (!getAccessToken()) {
@@ -35,15 +37,18 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
- 
-const refreshCart = useCallback(async () => {
-  try {
-    const cart = await getCart();
-    setCartCount(cart.count);
-  } catch {
-    setCartCount(0);
-  }
-}, []);
+  const refreshCart = useCallback(async () => {
+    // No token gate here on purpose — guest carts are real and
+    // identified via the httpOnly cookie the backend sets, not a
+    // login token. Only wishlist genuinely requires being logged in.
+    try {
+      const cart = await getCart();
+      setCartCount(cart.count);
+    } catch {
+      setCartCount(0);
+    }
+  }, []);
+
   const refreshWishlist = useCallback(async () => {
     if (!getAccessToken()) {
       setWishlistIds([]);
@@ -67,7 +72,7 @@ const refreshCart = useCallback(async () => {
   // On first mount, hydrate everything if a token already exists
   // (e.g. person refreshed the page while logged in).
   useEffect(() => {
-    refreshAuth();
+    refreshAuth().finally(() => setAuthChecked(true));
     refreshCart();
     refreshWishlist();
   }, [refreshAuth, refreshCart, refreshWishlist]);
@@ -79,6 +84,7 @@ const refreshCart = useCallback(async () => {
         cartCount,
         wishlistIds,
         isLoggedIn: !!user,
+        authChecked,
         refreshAuth,
         refreshCart,
         refreshWishlist,

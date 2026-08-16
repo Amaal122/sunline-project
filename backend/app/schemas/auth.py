@@ -20,8 +20,11 @@ class UserOut(BaseModel):
     email: EmailStr
     full_name: str | None = None
     is_active: bool
+    is_admin: bool  # add this line
 
 
 class TokenOut(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+

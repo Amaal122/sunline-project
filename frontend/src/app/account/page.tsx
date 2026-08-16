@@ -25,14 +25,14 @@ export default function AccountPage() {
 
   if (!isLoggedIn) {
     return (
-      <div className="wrap" style={{ padding: "80px 0", textAlign: "center" }}>
+      <div className="wrap" style={{ paddingTop: 80, paddingBottom: 80, textAlign: "center" }}>
         <p style={{ color: "var(--ink-dim)" }}>Redirecting…</p>
       </div>
     );
   }
 
   return (
-    <div className="wrap" style={{ padding: "60px 0 100px" }}>
+    <div className="wrap" style={{ paddingTop: 60, paddingBottom: 100 }}>
       {/* Greeting */}
       <div style={{ marginBottom: 48 }}>
         <p className="eyebrow" style={{ color: "var(--lavender)", marginBottom: 10 }}>

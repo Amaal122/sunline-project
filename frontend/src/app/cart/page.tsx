@@ -49,12 +49,12 @@ export default function CartPage() {
   }
 
   if (loading) {
-    return <div className="wrap" style={{ padding: "80px 0", textAlign: "center" }}>Loading your bag…</div>;
+   return <div className="wrap" style={{ paddingTop: 80, paddingBottom: 80, textAlign: "center" }}>Loading your bag…</div>;
   }
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="wrap" style={{ padding: "100px 0", textAlign: "center" }}>
+      <div className="wrap" style={{ paddingTop: 100, paddingBottom: 100, textAlign: "center" }}>
         <h1>Your Bag</h1>
         <p style={{ margin: "16px 0 30px", color: "var(--ink-dim)" }}>
           Your bag is empty.
@@ -67,7 +67,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="wrap" style={{ padding: "40px 0 100px" }}>
+    <div className="wrap" style={{ paddingTop: 40, paddingBottom: 100 }}>
       <h1 style={{ marginBottom: 30 }}>Your Bag</h1>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 60 }}>
