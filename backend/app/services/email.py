@@ -1,36 +1,32 @@
-import httpx
+import logging
+import smtplib
+from email.message import EmailMessage
+from html import escape
 
 from app.core.config import settings
 from app.models.order import Order
 from app.models.user import User
 
-BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
+logger = logging.getLogger(__name__)
 
 
 def _send_email(to_email: str, to_name: str, subject: str, html_content: str) -> None:
-    print(f"[email] _send_email called — sending '{subject}' to {to_email}")
-
-    headers = {
-        "accept": "application/json",
-        "api-key": settings.BREVO_API_KEY,
-        "content-type": "application/json",
-    }
-    payload = {
-        "sender": {"name": settings.SENDER_NAME, "email": settings.SENDER_EMAIL},
-        "to": [{"email": to_email, "name": to_name}],
-        "subject": subject,
-        "htmlContent": html_content,
-    }
-
+    message = EmailMessage()
+    message["From"] = f"{settings.SENDER_NAME} <{settings.SENDER_EMAIL}>"
+    message["To"] = f"{to_name} <{to_email}>"
+    message["Subject"] = subject
+    message.set_content("SUNLINE notification")
+    message.add_alternative(html_content, subtype="html")
     try:
-        with httpx.Client(timeout=10.0) as client:
-            response = client.post(BREVO_API_URL, headers=headers, json=payload)
-            response.raise_for_status()
-            print(
-                f"[email] Sent '{subject}' to {to_email} — status {response.status_code}"
-            )
-    except httpx.HTTPError as exc:
-        print(f"[email] Failed to send '{subject}' to {to_email}: {exc}")
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10) as smtp:
+            if settings.SMTP_USE_TLS:
+                smtp.starttls()
+            if settings.SMTP_USERNAME:
+                smtp.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+            smtp.send_message(message)
+        logger.info("Sent '%s' to %s via SMTP", subject, to_email)
+    except (OSError, smtplib.SMTPException) as exc:
+        logger.error("Failed to send '%s' to %s: %s", subject, to_email, exc)
 
 
 def send_welcome_email(user: User) -> None:
@@ -105,5 +101,32 @@ def send_order_confirmation_email(order: Order, recipient_email: str) -> None:
         to_email=recipient_email,
         to_name=order.full_name,
         subject=f"Your SUNLINE order {order.order_number} is confirmed",
+        html_content=html,
+    )
+
+
+def send_escalation_email(reference: str, reason: str, summary: str,
+                          language: str, order_number: str | None) -> None:
+    """Notify the configured administrator after a human handoff is recorded."""
+    recipient = settings.ADMIN_EMAIL or settings.SENDER_EMAIL
+    if not recipient:
+        logger.warning("Escalation %s recorded but no administrator email is configured", reference)
+        return
+    order_line = f"<p><strong>Order:</strong> {escape(order_number)}</p>" if order_number else ""
+    html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+      <h2>New SUNLINE customer escalation</h2>
+      <p><strong>Reference:</strong> {escape(reference)}</p>
+      <p><strong>Reason:</strong> {escape(reason)}</p>
+      {order_line}
+      <p><strong>Language:</strong> {escape(language)}</p>
+      <p><strong>Summary:</strong></p>
+      <p>{escape(summary)}</p>
+    </div>
+    """
+    _send_email(
+        to_email=recipient,
+        to_name="SUNLINE administrator",
+        subject=f"New customer escalation {reference}",
         html_content=html,
     )

@@ -31,6 +31,14 @@ def main():
         for st in s.scalars(select(AgentStep).where(AgentStep.run_id == run.id).order_by(AgentStep.id)):
             if st.error:
                 print(f"  [{st.type}] ERROR: {st.error}")
+            elif st.type == "guard":
+                o = st.output or {}
+                if o.get("truncated"):
+                    print(f"  [GUARD] the answer was cut off (output budget); retried with a bigger budget. tokens={o.get('tokens')}")
+                elif o.get("missing_tool"):
+                    print("  [GUARD] the model answered about an order without calling an order tool; asked again")
+                else:
+                    print(f"  [GUARD] blocked an answer with numbers not found in the tool results: {o.get('ungrounded_numbers')}")
             elif st.type == "llm":
                 calls = (st.output or {}).get("tool_calls") or []
                 print(f"  [llm] asked for tools: {calls}" if calls else "  [llm] wrote the answer")

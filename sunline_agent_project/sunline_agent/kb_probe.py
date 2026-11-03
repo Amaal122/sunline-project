@@ -8,6 +8,11 @@ from .kb import KnowledgeBase, make_kb_session_factory
 
 
 def main():
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:  # noqa: BLE001
+            pass
     kb = KnowledgeBase(make_kb_session_factory(config.KB_DATABASE_URL), make_embedder(config), config.KB_MIN_SCORE)
     for q in sys.argv[1:] or ["Quel est le délai de livraison ?"]:
         print(f"\n{q}")

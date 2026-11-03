@@ -23,6 +23,14 @@ services:
     volumes:
       - sunline_redis_data:/data
 
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: sunline-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
   backend:
     build: ./backend
     container_name: sunline-backend
@@ -37,6 +45,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - mailpit
 
   frontend:
     build:
