@@ -32,7 +32,11 @@ class EmptyCartError(HTTPException):
 
 def _generate_order_number(db: Session) -> str:
     """SL + 6 digits, matching the brand's existing order-number style.
-    Retries on the rare collision rather than trusting randomness alone."""
+    Retries on the rare collision rather than trusting randomness alone.
+
+    NOTE: this number is a human-readable identifier only. It is NOT a
+    secret (only 900,000 possibilities) and must never grant access to
+    order data on its own — see _generate_access_token()."""
     for _ in range(10):
         candidate = f"SL{secrets.randbelow(900000) + 100000}"
         exists = db.execute(
@@ -44,6 +48,13 @@ def _generate_order_number(db: Session) -> str:
     raise HTTPException(
         status_code=500, detail="Could not generate a unique order number"
     )
+
+
+def _generate_access_token() -> str:
+    """Unguessable secret (128 bits) returned once at checkout. Guest
+    orders can only be read by presenting this token, so knowing or
+    enumerating the SL-number is not enough to read personal data."""
+    return secrets.token_urlsafe(16)
 
 
 def _resolve_checkout_lines(
@@ -132,6 +143,7 @@ def create_order_from_cart(
 
     order = Order(
         order_number=_generate_order_number(db),
+        access_token=_generate_access_token(),
         user_id=current_user.id if current_user else None,
         status=OrderStatus.pending,
         payment_method=payload.payment_method,
@@ -207,8 +219,30 @@ def list_user_orders(db: Session, user: User) -> list[Order]:
     )
 
 
+def _can_view_order(
+    order: Order, current_user: User | None, access_token: str | None
+) -> bool:
+    """Access rule, enforced server-side:
+    - order linked to an account  -> only that logged-in owner
+    - guest order (user_id None)  -> only with the matching secret token
+    Anything else is denied (fails closed, including legacy guest orders
+    that have no token yet)."""
+    if order.user_id is not None:
+        return current_user is not None and current_user.id == order.user_id
+
+    if not access_token or not order.access_token:
+        return False
+    # encode() so a non-ASCII token cannot raise TypeError (-> 500)
+    return secrets.compare_digest(
+        order.access_token.encode(), access_token.encode()
+    )
+
+
 def get_order_by_number(
-    db: Session, order_number: str, current_user: User | None
+    db: Session,
+    order_number: str,
+    current_user: User | None,
+    access_token: str | None = None,
 ) -> Order:
     order = db.execute(
         select(Order)
@@ -216,14 +250,9 @@ def get_order_by_number(
         .options(selectinload(Order.items))
     ).scalar_one_or_none()
 
-    if not order:
+    # Identical response whether the order does not exist or access is
+    # denied, so the endpoint cannot be used to discover which numbers exist.
+    if not order or not _can_view_order(order, current_user, access_token):
         raise HTTPException(status_code=404, detail="Order not found")
-
-    # Orders placed while logged in are private to that account. Guest
-    # orders (user_id is None) act like a receipt — knowing the order
-    # number is enough, same as most e-commerce guest-checkout flows.
-    if order.user_id is not None:
-        if not current_user or current_user.id != order.user_id:
-            raise HTTPException(status_code=404, detail="Order not found")
 
     return order
