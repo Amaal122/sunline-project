@@ -68,7 +68,9 @@ def test_admin_flag_gives_no_extra_access(db):
     assert status(db, "DEV-1001", user=ADMIN_ID) == NOT_FOUND          # admin account is a customer here
     with db() as s:
         assert get_my_orders(s, GetMyOrdersArgs(), ctx(ADMIN_ID))["count"] == 0
-    c = ctx(ALICE_ID); c["is_admin"] = True; c["role"] = "admin"
+    c = ctx(ALICE_ID)
+    c["is_admin"] = True
+    c["role"] = "admin"
     with db() as s:
         assert get_order_status(s, GetOrderStatusArgs(order_number="DEV-2001"), c) == NOT_FOUND
 
@@ -146,7 +148,8 @@ def test_one_order_number_is_locked_across_sessions(db):
 def test_limiter_window_expires():
     now = [1000.0]
     lim = AttemptLimiter(max_failures=2, window_seconds=60, clock=lambda: now[0])
-    lim.record_failure("k"); lim.record_failure("k")
+    lim.record_failure("k")
+    lim.record_failure("k")
     assert lim.blocked("k")
     now[0] += 61
     assert not lim.blocked("k")

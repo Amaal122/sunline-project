@@ -82,12 +82,12 @@ def _labels(conn, typname):
 def _pick(labels, wanted):
     if not labels:
         return wanted
-    for l in labels:
-        if l.lower() == wanted.lower():
-            return l
-    for l in labels:
-        if wanted.lower() in l.lower():
-            return l
+    for label in labels:
+        if label.lower() == wanted.lower():
+            return label
+    for label in labels:
+        if wanted.lower() in label.lower():
+            return label
     return labels[0]
 
 
