@@ -1,9 +1,11 @@
-import uuid
 import enum
-from sqlalchemy import Column, String, Numeric, Enum, DateTime, ForeignKey
+import uuid
+
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from app.core.database import Base
 
 
@@ -29,7 +31,7 @@ class PaymentStatus(str, enum.Enum):
 
 class Order(Base):
     __tablename__ = "orders"
-
+    access_token = Column(String(64), nullable=True, unique=True, index=True)
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     order_number = Column(String, unique=True, nullable=False, index=True)
     user_id = Column(

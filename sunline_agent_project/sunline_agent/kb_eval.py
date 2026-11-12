@@ -24,7 +24,8 @@ def evaluate(kb, cases):
         exp = c.get("expected")
         row = {"question": c["question"], "lang": c.get("lang", "?"), "expected": exp,
                "top_source": top["source"], "top_score": top["score"],
-               "sources": [h["source"] for h in hits]}
+               "sources": [h["source"] for h in hits],
+               "titles": [f"{h['title']} ({h['score']:.2f})" for h in hits]}
         if exp:
             row["top1"] = top["source"] == exp
             row["top3"] = exp in row["sources"]
@@ -54,8 +55,14 @@ def evaluate(kb, cases):
 
 
 def main():
+    # Windows consoles often use cp1252/cp850 and crash or garble Arabic and accents: force UTF-8.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:  # noqa: BLE001
+            pass
     path = sys.argv[1] if len(sys.argv) > 1 else "eval/kb_questions.json"
-    cases = json.load(open(path, encoding="utf-8-sig"))
+    cases = json.load(open(path, encoding="utf-8"))
     embedder = make_embedder(config)
     kb = KnowledgeBase(make_kb_session_factory(config.KB_DATABASE_URL), embedder, config.KB_MIN_SCORE)
     res = evaluate(kb, cases)
@@ -64,6 +71,8 @@ def main():
         mark = "OK  " if r["ok"] else "FAIL"
         want = r["expected"] or "(no answer expected)"
         print(f"{mark} {r['top_score']:.2f} [{r['lang']:6}] {r['question'][:55]:55} -> {r['top_source']:22} want {want}")
+        if not r["ok"]:
+            print("       top 3 chunks: " + " | ".join(r["titles"]))
     print(f"\nCovered questions : top-1 {res['top1']}/{res['covered']} | right doc in top-3 {res['top3']}/{res['covered']}")
     for lang, (ok, total) in sorted(res["by_lang"].items()):
         print(f"   {lang:7}: top-3 {ok}/{total}")

@@ -1,0 +1,18 @@
+warning: in the working copy of 'backend\sunline_agent\agent.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'sunline_agent_project\sunline_agent\agent.py', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git "a/backend\\sunline_agent\\agent.py" "b/sunline_agent_project\\sunline_agent\\agent.py"[m
+[1mindex 929e978..de1ec69 100644[m
+[1m--- "a/backend\\sunline_agent\\agent.py"[m
+[1m+++ "b/sunline_agent_project\\sunline_agent\\agent.py"[m
+[36m@@ -42,7 +42,10 @@[m [mFALLBACK = ("Désolée, je n'arrive pas à finir cette demande. "[m
+ # ---- the customer's own message, or the recent conversation.[m
+ _ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")[m
+ _SKIP_KEYS = {"id", "product_id", "score", "best_score"}   # bookkeeping, not facts (counts ARE facts)[m
+[31m-ORDER_TOKEN = re.compile(r"#\d{3,}|(?<![A-Za-z0-9])[A-Za-z]{1,6}[-_]\d{3,}(?![A-Za-z0-9])")[m
+[32m+[m[32mORDER_TOKEN = re.compile([m
+[32m+[m[32m    r"#\d{3,}|(?<![A-Za-z0-9])[A-Za-z]{1,6}[-_]\d{3,}(?![A-Za-z0-9])|"[m
+[32m+[m[32m    r"(?<![A-Za-z0-9])[A-Za-z]{2,6}\d{5,}(?![A-Za-z0-9])"[m
+[32m+[m[32m)[m
+ ORDER_TOOLS = {"get_my_orders", "get_order_status", "escalate_to_human"}[m
+ ORDER_CORRECTION = ("[automatic check] The customer gave an order number but you did not call an order tool. "[m
+                     "Never answer about an order from earlier messages: call get_order_status now (it enforces "[m

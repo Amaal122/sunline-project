@@ -1,7 +1,7 @@
 import uuid
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field
 
 from app.models.order import OrderStatus, PaymentMethod, PaymentStatus
 
@@ -43,6 +43,9 @@ class OrderItemOut(BaseModel):
 
 
 class OrderOut(BaseModel):
+    """Shape returned when READING an order (GET /api/orders/{number}).
+    Must never contain access_token."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
@@ -63,6 +66,13 @@ class OrderOut(BaseModel):
     postal_code: str
 
     items: list[OrderItemOut]
+
+
+class OrderCreatedOut(OrderOut):
+    """Shape returned ONLY by checkout (POST /api/orders). Adds the secret
+    token the customer needs to read this order later without an account."""
+
+    access_token: str
 
 
 class OrderListItemOut(BaseModel):

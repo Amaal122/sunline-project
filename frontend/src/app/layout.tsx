@@ -3,7 +3,7 @@ import "./globals.css";
 import { AppStateProvider } from "@/context/AppStateContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-
+import ChatWidget from "@/components/chat/ChatWidget";
 export const metadata: Metadata = {
   title: "SUNLINE - Premium Denim, Made in Tunisia",
   description:
@@ -26,6 +26,7 @@ export default function RootLayout({
           <Header />
           <main>{children}</main>
           <Footer />
+          <ChatWidget />
         </AppStateProvider>
       </body>
     </html>

@@ -1,12 +1,12 @@
-from sqlalchemy.orm import Session, selectinload
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.database import get_db
 from app.core.deps import get_current_admin_user
-from app.models.user import User
 from app.models.order import Order
-from app.schemas.order import OrderOut
+from app.models.user import User
 from app.schemas.admin import AdminOrderListItemOut, OrderStatusUpdateIn
+from app.schemas.order import OrderOut
 
 router = APIRouter(prefix="/admin/orders", tags=["admin"])
 

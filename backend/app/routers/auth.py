@@ -1,28 +1,29 @@
 import uuid
+
 from fastapi import (
     APIRouter,
     BackgroundTasks,
     Depends,
     HTTPException,
-    status,
-    Response,
     Request,
+    Response,
+    status,
 )
-from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db
+from app.core.deps import get_current_user
 from app.core.security import (
-    hash_password,
-    verify_password,
     create_access_token,
     create_refresh_token,
     decode_token,
+    hash_password,
+    verify_password,
 )
-from app.core.deps import get_current_user
-from app.core.config import settings
 from app.models.user import User
-from app.schemas.auth import UserRegister, UserLogin, UserOut, TokenOut
+from app.schemas.auth import TokenOut, UserLogin, UserOut, UserRegister
 from app.services.cart import CART_COOKIE_NAME, merge_guest_cart_into_user_cart
 from app.services.email import send_welcome_email
 

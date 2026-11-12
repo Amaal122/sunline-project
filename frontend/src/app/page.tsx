@@ -4,6 +4,7 @@ import ProductGrid from "@/components/shop/ProductGrid";
 import NewsletterForm from "@/components/home/NewsletterForm";
 import { Lock, RotateCcw, Truck, UserRound } from "lucide-react";
 
+
 const FIT_BACKGROUNDS = ["#d8cdd9", "#e4ded0", "#cfd3c4", "#ded6de", "#c9c2cb"];
 const FITS = ["Straight", "Wide Leg", "Skinny", "Mom Jeans", "Flare"] as const;
 

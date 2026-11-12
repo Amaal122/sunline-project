@@ -15,12 +15,12 @@ def health_check(db: Session = Depends(get_db)):
 
     try:
         db.execute(text("SELECT 1"))
-    except Exception as e:
+    except Exception as e:    # noqa: BLE001
         db_status = f"error: {e}"
 
     try:
         redis_client.ping()
-    except Exception as e:
+    except Exception as e:    # noqa: BLE001
         redis_status = f"error: {e}"
 
     return {

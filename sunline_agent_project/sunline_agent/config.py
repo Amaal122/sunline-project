@@ -26,5 +26,9 @@ EMBED_API_KEY = os.getenv("EMBED_API_KEY", "")
 
 MAX_STEPS = 6            # hard cap on LLM calls per user message
 TOKEN_BUDGET = 20_000    # hard cap on total tokens per run
-MAX_OUTPUT_TOKENS = 1024
+MAX_OUTPUT_TOKENS = 2048   # reasoning models spend part of this budget on hidden thinking
 MAX_HISTORY_TURNS = 4    # previous Q&A pairs sent back to the model (keeps tokens low)
+
+# ---- human handoff (week 3)
+ESCALATION_CONTACT = os.getenv("ESCALATION_CONTACT", "")   # e.g. "WhatsApp +216 XX XXX XXX / contact@sunline.tn"
+ESCALATION_HOURS = os.getenv("ESCALATION_HOURS", "")       # e.g. "lundi-samedi, 9h-18h"

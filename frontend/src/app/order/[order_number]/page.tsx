@@ -1,11 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, notFound } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getOrderByNumber as fetchOrder, getAccessToken, ApiError } from "@/lib/api";
+import { getOrderByNumber as fetchOrder } from "@/lib/api";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { OrderOut } from "@/types/order";
+
+// Clé sessionStorage du jeton secret d'une commande d'invité.
+// Le checkout l'écrit (voir checkout/page.tsx) ; un lien d'e-mail
+// ?token=... l'écrit aussi (voir useEffect ci-dessous).
+const tokenKey = (orderNumber: string) => `order_token:${orderNumber}`;
 
 export default function OrderConfirmationPage() {
   const params = useParams<{ order_number: string }>();
@@ -14,29 +19,47 @@ export default function OrderConfirmationPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!params.order_number) return;
+    const orderNumber = params.order_number;
+    if (!orderNumber) return;
 
-    // Build the fetch manually so we can attach the auth token when present
-    // (required for logged-in user orders; harmless for guest orders)
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const token = getAccessToken();
-    const headers: Record<string, string> = {};
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+    let cancelled = false;
 
-    fetch(`${apiUrl}/api/orders/${params.order_number}`, {
-      headers,
-      credentials: "include",
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          setNotFoundState(true);
-          return;
-        }
-        const data = await res.json();
-        setOrder(data);
+    // 1) Retrouver le jeton : lien d'e-mail (?token=...) ou checkout (sessionStorage).
+    //    Une cliente connectée n'en a pas besoin : son Authorization suffit.
+    let token: string | undefined;
+    try {
+      const urlToken = new URLSearchParams(window.location.search).get("token");
+      if (urlToken) {
+        sessionStorage.setItem(tokenKey(orderNumber), urlToken);
+        // On retire le jeton de l'URL pour qu'il ne reste pas dans
+        // l'historique, les captures d'écran ou les liens copiés.
+        window.history.replaceState(null, "", window.location.pathname);
+        token = urlToken;
+      } else {
+        token = sessionStorage.getItem(tokenKey(orderNumber)) ?? undefined;
+      }
+    } catch {
+      // sessionStorage peut être indisponible (navigation privée stricte) :
+      // on continue sans jeton, la page affichera « commande introuvable »
+      // pour une invitée, ce qui reste sûr.
+    }
+
+    // 2) Charger la commande. Le jeton part dans l'en-tête X-Order-Token
+    //    (géré par getOrderByNumber dans lib/api.ts).
+    fetchOrder(orderNumber, token)
+      .then((data) => {
+        if (!cancelled) setOrder(data);
       })
-      .catch(() => setNotFoundState(true))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (!cancelled) setNotFoundState(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [params.order_number]);
 
   const fmtPrice = (v: string) => `${Number(v).toFixed(2)} DT`;
@@ -54,7 +77,8 @@ export default function OrderConfirmationPage() {
       <div className="wrap" style={{ padding: "80px 0", textAlign: "center" }}>
         <h1 style={{ marginBottom: 16 }}>Order Not Found</h1>
         <p style={{ color: "var(--ink-dim)", marginBottom: 28 }}>
-          We couldn&apos;t find that order. Double-check the order number and try again.
+          We couldn&apos;t find that order. Open the link from your confirmation
+          email, or log in if you placed it with an account.
         </p>
         <Link href="/shop" className="btn btn-dark">
           Back to Shop
