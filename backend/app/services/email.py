@@ -2,6 +2,7 @@ import logging
 import smtplib
 from email.message import EmailMessage
 from html import escape
+from urllib.parse import quote
 
 from app.core.config import settings
 from app.models.order import Order
@@ -10,12 +11,18 @@ import threading
 logger = logging.getLogger(__name__)
 
 
-def _send_email(to_email: str, to_name: str, subject: str, html_content: str) -> None:
+def _send_email(
+    to_email: str,
+    to_name: str,
+    subject: str,
+    html_content: str,
+    text_content: str | None = None,
+) -> None:
     message = EmailMessage()
     message["From"] = f"{settings.SENDER_NAME} <{settings.SENDER_EMAIL}>"
     message["To"] = f"{to_name} <{to_email}>"
     message["Subject"] = subject
-    message.set_content("SUNLINE notification")
+    message.set_content(text_content or "SUNLINE notification")
     message.add_alternative(html_content, subtype="html")
     try:
         with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10) as smtp:
@@ -34,7 +41,7 @@ def send_welcome_email(user: User) -> None:
     <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 32px;">
       <h1 style="font-size: 22px; letter-spacing: 1px;">Welcome to SUNLINE</h1>
       <p style="color: #444; line-height: 1.6;">
-        Hi {user.full_name}, thanks for creating an account. You're all set —
+        Hi {escape(user.full_name)}, thanks for creating an account. You're all set —
         explore the new arrivals and enjoy free delivery across Tunisia on
         orders over 200 DT.
       </p>
@@ -48,11 +55,31 @@ def send_welcome_email(user: User) -> None:
     )
 
 
+def build_order_link(order: Order) -> str:
+    """Link to the order page on the storefront.
+
+    - Guest order (no account): the link carries the order's secret token
+      (?token=...). The confirmation page reads it, then removes it from the
+      address bar. The token is the only thing that lets a guest read the
+      order, so the link must only ever go to the e-mail given at checkout.
+    - Order tied to an account: a plain link; the customer logs in to see it.
+    - Legacy guest order without a token: a plain link (it cannot be opened
+      by an unauthenticated visitor, which is the safe default).
+    """
+    base = settings.FRONTEND_ORIGIN.rstrip("/")
+    link = f"{base}/order/{quote(order.order_number, safe='')}"
+    if order.user_id is None and order.access_token:
+        link += f"?token={quote(order.access_token, safe='')}"
+    return link
+
+
 def send_order_confirmation_email(order: Order, recipient_email: str) -> None:
+    # Everything typed by the customer is escaped: an e-mail is HTML, so a
+    # name or address containing "<" would otherwise be injected as markup.
     items_rows = "".join(
         f"""
         <tr style="border-bottom: 1px solid #eee;">
-          <td style="padding: 10px 0;">{item.product_name} — {item.color} / {item.size}</td>
+          <td style="padding: 10px 0;">{escape(item.product_name)} — {escape(item.color)} / {escape(item.size)}</td>
           <td style="padding: 10px 0; text-align: center;">{item.quantity}</td>
           <td style="padding: 10px 0; text-align: right;">{item.unit_price} DT</td>
         </tr>
@@ -60,12 +87,26 @@ def send_order_confirmation_email(order: Order, recipient_email: str) -> None:
         for item in order.items
     )
 
+    payment_method = (
+        order.payment_method.value
+        if hasattr(order.payment_method, "value")
+        else order.payment_method
+    )
+    order_link = build_order_link(order)
+
     html = f"""
     <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 32px;">
       <h1 style="font-size: 22px; letter-spacing: 1px;">Order Confirmed</h1>
-      <p style="color: #444;">Order <strong>{order.order_number}</strong> — thank you, {order.full_name}.</p>
+      <p style="color: #444;">Order <strong>{escape(order.order_number)}</strong> — thank you, {escape(order.full_name)}.</p>
 
-      <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+      <p style="margin: 24px 0;">
+        <a href="{escape(order_link, quote=True)}"
+           style="background: #111; color: #fff; padding: 12px 24px; text-decoration: none; font-size: 13px; letter-spacing: 1px;">
+          VIEW YOUR ORDER
+        </a>
+      </p>
+
+      <table style="width: 100%; border-collapse: collapse;margin-top: 20px;">
         <thead>
           <tr style="border-bottom: 2px solid #111; text-align: left;">
             <th style="padding-bottom: 8px;">Item</th>
@@ -86,22 +127,36 @@ def send_order_confirmation_email(order: Order, recipient_email: str) -> None:
 
       <h3 style="margin-top: 28px; font-size: 14px; text-transform: uppercase;">Shipping to</h3>
       <p style="color: #444; line-height: 1.6;">
-        {order.full_name}<br>
-        {order.address_line}<br>
-        {order.city}, {order.governorate} {order.postal_code}<br>
-        {order.phone}
+        {escape(order.full_name)}<br>
+        {escape(order.address_line)}<br>
+        {escape(order.city)}, {escape(order.governorate)} {escape(order.postal_code)}<br>
+        {escape(order.phone)}
       </p>
 
       <p style="color: #888; font-size: 13px; margin-top: 24px;">
-        Payment method: {order.payment_method.value if hasattr(order.payment_method, "value") else order.payment_method}
+        Payment method: {escape(str(payment_method))}
+      </p>
+
+      <p style="color: #888; font-size: 12px; margin-top: 24px; line-height: 1.5;">
+        Keep this email: the button above is your private link to your order.
+        Please don't forward it to anyone you don't trust.
       </p>
     </div>
     """
+
+    text = (
+        f"Order {order.order_number} is confirmed — thank you, {order.full_name}.\n\n"
+        f"View your order: {order_link}\n\n"
+        f"Total: {order.total} DT ({payment_method}).\n"
+        "Keep this email: the link is your private access to your order."
+    )
+
     _send_email(
         to_email=recipient_email,
         to_name=order.full_name,
         subject=f"Your SUNLINE order {order.order_number} is confirmed",
         html_content=html,
+        text_content=text,
     )
 
 
@@ -134,7 +189,7 @@ def send_escalation_email(reference: str, reason: str, summary: str,
 def notify_escalation_async(reference: str, reason: str, summary: str,
                             language: str, order_number: str | None) -> None:
     """Called by the agent after a handoff is recorded. Never blocks and never raises: the ticket
-    is already saved, so a mail problem must not affect the customer's conversation."""
+    is already saved, so a mail problem must not affect thecustomer's conversation."""
     def _run() -> None:
         try:
             send_escalation_email(reference, reason, summary, language, order_number)

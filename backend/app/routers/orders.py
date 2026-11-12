@@ -24,6 +24,11 @@ from app.services.order import (
     get_order_by_number,
     list_user_orders,
 )
+from app.services.order_access_limit import (
+    OrderAccessGuard,
+    client_ip,
+    get_order_access_guard,
+)
 
 router = APIRouter(tags=["orders"])
 
@@ -85,9 +90,11 @@ def get_my_orders(
 @router.get("/{order_number}", response_model=OrderOut)
 def get_order(
     order_number: str,
+    request: Request,
     db: Session = Depends(get_db),
     x_order_token: str | None = Header(default=None),
     current_user: User | None = Depends(get_optional_current_user),
+    guard: OrderAccessGuard = Depends(get_order_access_guard),
 ):
     """Powers the confirmation / tracking page.
 
@@ -95,7 +102,17 @@ def get_order(
     - Guest order: the secret token (header X-Order-Token) is required.
       The SL-number alone grants nothing.
     Every failure returns the same 404, whether the order exists or not.
-    The response model (OrderOut) deliberately has no access_token."""
-    return get_order_by_number(
-        db, order_number, current_user, access_token=x_order_token
-    )
+    Failures are counted per (IP, order) and per IP; once over the limit
+    the route answers 429 before touching the database. Successful reads
+    are never counted, so reloading the confirmation page is always safe."""
+    ip = client_ip(request)
+    guard.check(ip, order_number)  # 429 if this IP is blocked
+
+    try:
+        return get_order_by_number(
+            db, order_number, current_user, access_token=x_order_token
+        )
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_404_NOT_FOUND:
+            guard.record_failure(ip, order_number)
+        raise

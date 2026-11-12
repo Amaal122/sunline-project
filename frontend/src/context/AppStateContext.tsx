@@ -1,8 +1,9 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { getAccessToken, getCart, getWishlist, getMe, logout as apiLogout } from "@/lib/api";
+import { getAccessToken, getCart, getWishlist, getMe, logout as apiLogout, AUTH_EXPIRED_EVENT } from "@/lib/api";
 import { UserOut } from "@/types/auth";
+
 
 interface AppState {
   user: UserOut | null;
@@ -71,6 +72,16 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
   // On first mount, hydrate everything if a token already exists
   // (e.g. person refreshed the page while logged in).
+    // Un jeton rejeté par l'API a été effacé : on repasse en invité
+  // (cache le « Account », affiche le champ e-mail au checkout, etc.).
+  useEffect(() => {
+    const onExpired = () => {
+      setUser(null);
+      setWishlistIds([]);
+    };
+    window.addEventListener(AUTH_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
+  }, []);
   useEffect(() => {
     refreshAuth().finally(() => setAuthChecked(true));
     refreshCart();

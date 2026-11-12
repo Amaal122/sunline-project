@@ -1,0 +1,51 @@
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# Environment files and local secrets
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Python virtual environments, caches, and build artifacts
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# Local databases, logs, and runtime state
+*.db
+*.sqlite
+*.sqlite3
+*.log
+logs/
+
+# Node.js and Next.js generated files
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
+# Local Docker and tooling state
+.docker/
+
+# Accidental local shell/activation command files
+s -ExecutionPolicy*
