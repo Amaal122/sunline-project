@@ -6,7 +6,7 @@ import pytest
 
 pytest.importorskip("fastapi")
 pytest.importorskip("httpx")
-from fastapi import Depends, FastAPI, Header
+from fastapi import FastAPI, Header
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
@@ -109,7 +109,7 @@ def test_identity_comes_from_login_not_from_the_model():
     r = chat(c, "Où est DEV-2001 ?", user=ALICE_ID)               # alice asks for BOB's order
     assert r.status_code == 200
     with log() as s:
-        tool = [x for x in s.scalars(select(AgentStep)) if x.type == "tool"][0]
+        tool = next(x for x in s.scalars(select(AgentStep)) if x.type == "tool")
     assert tool.output["found"] is False
 
 

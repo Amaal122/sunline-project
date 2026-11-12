@@ -4,26 +4,29 @@ Products and orders use the real SUNLINE schema (see shop_tables.py). The model 
 supplies identity: who the customer is comes from ctx, set by the server.
 """
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Optional, Type
 
 from pydantic import BaseModel, Field
 from sqlalchemy import String, cast, exists, func, or_, select
 
 from .escalation import EscalateArgs, escalate_to_human
-from .order_tools import (GetMyOrdersArgs, GetOrderStatusArgs, get_my_orders,
-                          get_order_status)
+from .order_tools import (
+    GetMyOrdersArgs,
+    GetOrderStatusArgs,
+    get_my_orders,
+    get_order_status,
+)
 from .shop_tables import product_variants_read as pv
 from .shop_tables import products_read as pr
-
 
 # ---------- argument schemas (Pydantic = validation + JSON schema for the LLM)
 
 class SearchProductsArgs(BaseModel):
     query: str = Field(description="Keywords such as 'jean noir' or 'mom fit'. "
                                    "Use the product vocabulary (French).")
-    size: Optional[str] = Field(None, description="Only products available in this size, e.g. '38'.")
-    max_price: Optional[float] = Field(None, description="Maximum price in TND.")
+    size: str | None = Field(None, description="Only products available in this size, e.g. '38'.")
+    max_price: float | None = Field(None, description="Maximum price in TND.")
     limit: int = Field(5, ge=1, le=10)
 
 
@@ -105,7 +108,7 @@ def search_knowledge_base(session, args: SearchKBArgs, ctx: dict):
 class Tool:
     name: str
     description: str
-    args_model: Type[BaseModel]
+    args_model: type[BaseModel]
     fn: Callable
 
     def schema(self) -> dict:

@@ -4,7 +4,7 @@
 
 Support cases (agent_escalations) are business records and are NOT deleted here."""
 import argparse
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import delete, select
 
@@ -13,7 +13,7 @@ from .db import AgentRun, AgentStep, make_session_factory
 
 
 def purge(session_factory, days: int, now=None) -> dict:
-    cutoff = (now or datetime.now(timezone.utc)) - timedelta(days=days)
+    cutoff = (now or datetime.now(UTC)) - timedelta(days=days)
     with session_factory() as s:
         old = select(AgentRun.id).where(AgentRun.started_at < cutoff)
         steps = s.execute(delete(AgentStep).where(AgentStep.run_id.in_(old))).rowcount

@@ -1,5 +1,6 @@
 import logging
 import smtplib
+import threading
 from email.message import EmailMessage
 from html import escape
 from urllib.parse import quote
@@ -7,7 +8,7 @@ from urllib.parse import quote
 from app.core.config import settings
 from app.models.order import Order
 from app.models.user import User
-import threading
+
 logger = logging.getLogger(__name__)
 
 
@@ -193,7 +194,7 @@ def notify_escalation_async(reference: str, reason: str, summary: str,
     def _run() -> None:
         try:
             send_escalation_email(reference, reason, summary, language, order_number)
-        except Exception:  # noqa: BLE001
+        except Exception:
             logger.exception("Escalation email for %s failed", reference)
 
     threading.Thread(target=_run, daemon=True).start()

@@ -1,9 +1,10 @@
 import uuid
 from decimal import Decimal
+
 from app.core.database import SessionLocal
-from app.models.product import Product, FitType
-from app.models.product_variant import ProductVariant
+from app.models.product import FitType, Product
 from app.models.product_image import ProductImage
+from app.models.product_variant import ProductVariant
 
 db = SessionLocal()
 

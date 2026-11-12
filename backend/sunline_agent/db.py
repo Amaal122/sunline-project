@@ -1,9 +1,17 @@
 """Logging tables: every run and every step (LLM call or tool call) is stored.
 This is your debugging tool, your evaluation data and your audit trail."""
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import (JSON, Column, DateTime, ForeignKey, Integer, String,
-                        Text, create_engine)
+from sqlalchemy import (
+    JSON,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    create_engine,
+)
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -11,7 +19,7 @@ Base = declarative_base()
 
 
 def _now():
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class AgentRun(Base):

@@ -34,8 +34,10 @@ def test_response_with_tool_call_and_broken_json():
 
 
 def test_make_llm_requires_key_for_hosted_and_rejects_unknown_provider():
-    import pytest
     from types import SimpleNamespace as C
+
+    import pytest
+
     from sunline_agent.llm import make_llm
     with pytest.raises(ValueError, match="LLM_API_KEY"):
         make_llm(C(PROVIDER="openai_compat", LLM_BASE_URL="https://api.groq.com/openai/v1",

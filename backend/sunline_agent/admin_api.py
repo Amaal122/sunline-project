@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict
@@ -12,11 +12,11 @@ class EscalationOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     created_at: datetime
-    run_id: Optional[int] = None
-    reason: Optional[str] = None
-    summary: Optional[str] = None
-    language: Optional[str] = None
-    order_number: Optional[str] = None
+    run_id: int | None = None
+    reason: str | None = None
+    summary: str | None = None
+    language: str | None = None
+    order_number: str | None = None
     status: str
 
 
@@ -28,7 +28,7 @@ def build_admin_router(*, get_admin, log_sf) -> APIRouter:
     router = APIRouter()
 
     @router.get("/escalations", response_model=list[EscalationOut])
-    def list_escalations(status: Optional[Literal["open", "done"]] = None,
+    def list_escalations(status: Literal["open", "done"] | None = None,
                          limit: int = Query(50, ge=1, le=200),
                          admin=Depends(get_admin)):
         with log_sf() as s:

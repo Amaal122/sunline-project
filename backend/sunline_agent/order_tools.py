@@ -14,8 +14,7 @@
 import hmac
 import re
 import uuid
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
@@ -50,7 +49,7 @@ class GetMyOrdersArgs(BaseModel):
 
 class GetOrderStatusArgs(BaseModel):
     order_number: str = Field(max_length=40, description="Order number given by the customer.")
-    phone: Optional[str] = Field(None, max_length=30,
+    phone: str | None = Field(None, max_length=30,
                                  description="Phone number used at checkout. Needed only when the "
                                              "customer is not logged in.")
 
@@ -89,8 +88,8 @@ def _days_since(dt):
     if dt is None:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return max(0, (datetime.now(timezone.utc) - dt).days)
+        dt = dt.replace(tzinfo=UTC)
+    return max(0, (datetime.now(UTC) - dt).days)
 
 
 def _item_count(session, order_id):

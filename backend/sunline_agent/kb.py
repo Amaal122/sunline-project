@@ -62,7 +62,7 @@ def _split_long(body: str, max_chars: int):
 def chunk_markdown(text: str, source: str, max_chars: int = 900):
     """Split by headings (up to level 3); long sections are split by paragraph.
     HTML comments (<!-- ... -->) are dropped, so you can leave notes in the files."""
-    text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
     stack, body, chunks = [], [], []
 
     def flush():

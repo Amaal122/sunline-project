@@ -1,4 +1,5 @@
 import cloudinary
+
 from app.core.config import settings
 
 cloudinary.config(

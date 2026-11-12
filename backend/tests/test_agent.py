@@ -117,7 +117,7 @@ class FlakyLogSession:
 
 def test_log_failure_does_not_break_the_answer(sfs, capsys):
     data, log = sfs
-    flaky = lambda: FlakyLogSession(log())          # noqa: E731
+    flaky = lambda: FlakyLogSession(log())
     llm = FakeLLM([tool_call("search_products", {"query": "jean"}), say("Voici nos jeans.")])
     res = run_agent("jeans ?", llm, data, flaky)
     assert res.outcome == "answered" and res.answer == "Voici nos jeans."

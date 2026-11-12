@@ -48,4 +48,5 @@ out/
 .docker/
 
 # Accidental local shell/activation command files
-s -ExecutionPolicy*
+*.ps1
+.venv312/

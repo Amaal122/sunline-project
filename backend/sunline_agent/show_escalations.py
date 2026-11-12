@@ -1,4 +1,5 @@
 """List the cases waiting for a human:  python -m sunline_agent.show_escalations"""
+import contextlib
 import sys
 
 from sqlalchemy import select
@@ -9,10 +10,8 @@ from .db import AgentEscalation, make_session_factory
 
 def main():
     for stream in (sys.stdout, sys.stderr):
-        try:
+        with contextlib.suppress(Exception):
             stream.reconfigure(encoding="utf-8", errors="replace")
-        except Exception:  # noqa: BLE001
-            pass
     with make_session_factory(config.LOG_DATABASE_URL)() as s:
         rows = s.scalars(select(AgentEscalation).order_by(AgentEscalation.id.desc()).limit(30)).all()
         if not rows:

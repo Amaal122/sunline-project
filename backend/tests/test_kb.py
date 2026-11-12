@@ -4,7 +4,12 @@ from pathlib import Path
 import pytest
 
 from sunline_agent.embeddings import HashingEmbedder
-from sunline_agent.kb import KBNotReady, KnowledgeBase, chunk_markdown, make_kb_session_factory
+from sunline_agent.kb import (
+    KBNotReady,
+    KnowledgeBase,
+    chunk_markdown,
+    make_kb_session_factory,
+)
 from sunline_agent.tools import SearchKBArgs, search_knowledge_base
 
 KNOWLEDGE = Path(__file__).resolve().parent.parent / "knowledge"
@@ -94,7 +99,8 @@ def test_tool_returns_found_false_for_unrelated_question():
 
 def test_eval_file_is_valid_and_french_retrieval_works_with_baseline_embedder():
     from sunline_agent.kb_eval import evaluate
-    cases = json.load(open(KNOWLEDGE.parent / "eval" / "kb_questions.json", encoding="utf-8"))
+    with open(KNOWLEDGE.parent / "eval" / "kb_questions.json", encoding="utf-8") as f:
+        cases = json.load(f)
     assert len(cases) >= 20 and all("question" in c and "expected" in c for c in cases)
     kb = make_kb()
     kb.index_directory(KNOWLEDGE)

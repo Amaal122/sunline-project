@@ -3,6 +3,7 @@
     python -m sunline_agent.show_run 26      (a run number)
     python -m sunline_agent.show_run         (the latest run)
 """
+import contextlib
 import sys
 
 from sqlalchemy import select
@@ -13,10 +14,8 @@ from .db import AgentRun, AgentStep, make_session_factory
 
 def main():
     for stream in (sys.stdout, sys.stderr):
-        try:
+        with contextlib.suppress(Exception):
             stream.reconfigure(encoding="utf-8", errors="replace")
-        except Exception:  # noqa: BLE001
-            pass
     sf = make_session_factory(config.LOG_DATABASE_URL)
     with sf() as s:
         if len(sys.argv) > 1:

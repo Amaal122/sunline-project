@@ -25,7 +25,7 @@ def test_redaction_masks_phones_and_emails_but_not_order_numbers():
 
 
 def test_escalation_is_recorded_masked_and_returns_contact(env):
-    data, log = env
+    _data, log = env
     ctx = {"log_sf": log, "run_id": 7, "limiter": AttemptLimiter(), "session_id": "s"}
     out = escalate_to_human(None, EscalateArgs(reason="cancellation", language="fr", order_number="#dev-1001",
                                                summary="Veut annuler, rappeler le 20 000 111"), ctx)
@@ -36,14 +36,14 @@ def test_escalation_is_recorded_masked_and_returns_contact(env):
 
 
 def test_invalid_order_number_is_not_stored(env):
-    data, log = env
+    _data, log = env
     escalate_to_human(None, EscalateArgs(reason="other", summary="x", order_number="'; DROP--"), {"log_sf": log})
     with log() as s:
         assert s.scalars(select(AgentEscalation)).one().order_number is None
 
 
 def test_escalation_spam_is_limited(env):
-    data, log = env
+    _data, log = env
     ctx = {"log_sf": log, "limiter": AttemptLimiter(max_failures=3), "session_id": "s"}
     results = [escalate_to_human(None, EscalateArgs(reason="other", summary="x"), ctx) for _ in range(5)]
     assert [r["recorded"] for r in results] == [True, True, True, False, False]

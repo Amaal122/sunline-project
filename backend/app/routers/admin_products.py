@@ -1,29 +1,32 @@
+import logging
 import uuid
 
 import cloudinary.uploader
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
+import app.core.cloudinary_client  # noqa — ensures cloudinary.config() runs
 from app.core.database import get_db
 from app.core.deps import get_current_admin_user
-import app.core.cloudinary_client  # noqa — ensures cloudinary.config() runs
-from app.models.user import User
 from app.models.product import Product
 from app.models.product_image import ProductImage
 from app.models.product_variant import ProductVariant
+from app.models.user import User
+from app.schemas.admin import ProductUpdateIn, ProductVariantUpdateIn
 from app.schemas.product import (
-    ProductImageOut,
     ProductCreateIn,
-    ProductVariantCreateIn,
     ProductDetailOut,
+    ProductImageOut,
     ProductListOut,
+    ProductVariantCreateIn,
     ProductVariantOut,
 )
-from app.schemas.admin import ProductUpdateIn, ProductVariantUpdateIn
 
 router = APIRouter(prefix="/admin/products", tags=["admin"])
+logger = logging.getLogger(__name__)
 
+router = APIRouter(prefix="/admin/products", tags=["admin"])
 
 def _product_or_404(db: Session, product_id: uuid.UUID) -> Product:
     product = (
@@ -159,7 +162,6 @@ def delete_product(
             detail="This product has existing orders and can't be deleted. "
             "Set it inactive instead (PATCH is_active: false) to hide it from the shop.",
         )
-    return None
 
 
 # ---------------------------------------------------------------------
@@ -255,7 +257,6 @@ def delete_product_variant(
             detail="This variant has existing orders and can't be deleted. "
             "Set its stock to 0 instead to stop it selling.",
         )
-    return None
 
 
 # ---------------------------------------------------------------------
@@ -336,8 +337,11 @@ def delete_product_image(
             # Don't block the DB delete on Cloudinary being flaky — an
             # orphaned Cloudinary asset is a much smaller problem than
             # a stuck admin panel.
-            pass
-
+            logger.warning(
+                "Cloudinary delete failed for %s",
+                image.cloudinary_public_id,
+                exc_info=True,
+            )
     db.delete(image)
     db.commit()
 
@@ -352,4 +356,3 @@ def delete_product_image(
         existing_image.position = index
     db.commit()
 
-    return None

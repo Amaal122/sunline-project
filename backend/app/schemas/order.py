@@ -1,7 +1,7 @@
 import uuid
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field
 
 from app.models.order import OrderStatus, PaymentMethod, PaymentStatus
 

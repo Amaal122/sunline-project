@@ -2,16 +2,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.routers import health
-from app.routers import products
-from app.routers import auth
-from app.routers import cart
-from app.routers import wishlist
-from app.routers import orders
-from app.routers import admin_products
-from app.routers import admin_orders
-from app.routers import agent
-from app.routers import agent
+from app.routers import (
+    admin_orders,
+    admin_products,
+    agent,
+    auth,
+    cart,
+    health,
+    orders,
+    products,
+    wishlist,
+)
 
 app = FastAPI(
     title=settings.APP_NAME,

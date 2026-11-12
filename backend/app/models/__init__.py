@@ -1,11 +1,11 @@
 from app.core.database import Base as Base
-from app.models.user import User as User
 from app.models.address import Address as Address
-from app.models.product import Product as Product
-from app.models.product_variant import ProductVariant as ProductVariant
-from app.models.product_image import ProductImage as ProductImage
 from app.models.cart import Cart as Cart
 from app.models.cart_item import CartItem as CartItem
 from app.models.order import Order as Order
 from app.models.order_item import OrderItem as OrderItem
+from app.models.product import Product as Product
+from app.models.product_image import ProductImage as ProductImage
+from app.models.product_variant import ProductVariant as ProductVariant
+from app.models.user import User as User
 from app.models.wishlist import Wishlist as Wishlist

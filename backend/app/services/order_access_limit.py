@@ -59,7 +59,7 @@ class OrderAccessGuard:
             blocked = self.pair_limiter.blocked(
                 self._pair_key(ip, order_number)
             ) or self.ip_limiter.blocked(ip)
-        except Exception:  # noqa: BLE001
+        except Exception:
             logger.exception("Order access limiter unavailable (check) — allowing")
             return
         if blocked:
@@ -73,7 +73,7 @@ class OrderAccessGuard:
         try:
             self.pair_limiter.record_failure(self._pair_key(ip, order_number))
             self.ip_limiter.record_failure(ip)
-        except Exception:  # noqa: BLE001
+        except Exception:
             logger.exception("Order access limiter unavailable (record) — ignoring")
 
 

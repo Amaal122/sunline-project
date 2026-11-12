@@ -1,6 +1,5 @@
-from sqlalchemy import text
 
-from sunline_agent.db import make_data_session_factory, make_engine
+from sunline_agent.db import make_engine
 from sunline_agent.seed_demo import seed
 from sunline_agent.tools import SearchProductsArgs, search_products
 

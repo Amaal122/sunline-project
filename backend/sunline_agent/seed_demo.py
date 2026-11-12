@@ -7,13 +7,20 @@ ever deletes/inserts rows marked as fake (emails @example.test, order numbers DE
 Everything here is invented: names, phones and addresses do not belong to real people."""
 import sys
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import delete, select, text
 
 from . import config
 from .db import make_engine
-from .shop_tables import order_items, orders, product_variants, products, shop_metadata, users
+from .shop_tables import (
+    order_items,
+    orders,
+    product_variants,
+    products,
+    shop_metadata,
+    users,
+)
 
 # Fixed ids so you can "log in" as a fake customer:  $env:DEV_LOGIN = "alice"
 ALICE_ID = uuid.UUID("00000000-0000-0000-0000-0000000000a1")
@@ -45,7 +52,7 @@ def _assert_safe(engine):
     if engine.dialect.name == "sqlite":
         return
     db = engine.url.database or ""
-    if not (db.endswith("_dev") or db.endswith("_test")):
+    if not (db.endswith(("_dev", "_test"))):
         raise SystemExit(f"Refusing to seed database '{db}': the name must end in _dev or _test.")
 
 
@@ -89,7 +96,7 @@ def seed(engine):
     if engine.dialect.name == "sqlite":
         _check_sqlite_schema(engine)
         shop_metadata.create_all(engine)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     with engine.begin() as c:
         # remove previous FAKE rows only
         fake_orders = select(orders.c.id).where(orders.c.order_number.like("DEV-%"))

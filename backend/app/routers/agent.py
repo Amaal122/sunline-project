@@ -1,17 +1,17 @@
-from app.core.database import get_db
-from app.core.deps import get_optional_current_user, get_current_admin_user
+import redis
+
 from app.core.config import settings
-from app.services.email import send_escalation_email
+from app.core.database import get_db
+from app.core.deps import get_current_admin_user, get_optional_current_user
+from app.services.email import notify_escalation_async
 from sunline_agent import config
-from sunline_agent.api import build_agent_router
 from sunline_agent.admin_api import build_admin_router
+from sunline_agent.api import build_agent_router
+from sunline_agent.conversations import RedisStore
 from sunline_agent.db import make_session_factory
 from sunline_agent.embeddings import make_embedder
 from sunline_agent.kb import KnowledgeBase, make_kb_session_factory
 from sunline_agent.llm import make_llm
-import redis
-from sunline_agent.conversations import RedisStore
-from app.services.email import notify_escalation_async
 
 store = RedisStore(redis.Redis.from_url(settings.REDIS_URL))
 llm = make_llm(config)

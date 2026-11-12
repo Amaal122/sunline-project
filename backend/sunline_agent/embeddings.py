@@ -24,10 +24,7 @@ def dot(a, b):
 
 # ----------------------------------------------------------------- hashing
 
-_STOP = set("""le la les l un une des du de d et en au aux a à est sont je j puis peut peux
-pouvez vous nous il elle ce cette ces que qui quel quelle quels quelles pour par sur dans avec
-sans mon ma mes ton ta votre vos notre nos me te se s y ne pas plus ou où comment combien
-quand si on ai as avez faut fait the an of to is are for and or how what do does""".split())
+_STOP = {"le", "la", "les", "l", "un", "une", "des", "du", "de", "d", "et", "en", "au", "aux", "a", "à", "est", "sont", "je", "j", "puis", "peut", "peux", "pouvez", "vous", "nous", "il", "elle", "ce", "cette", "ces", "que", "qui", "quel", "quelle", "quels", "quelles", "pour", "par", "sur", "dans", "avec", "sans", "mon", "ma", "mes", "ton", "ta", "votre", "vos", "notre", "nos", "me", "te", "se", "s", "y", "ne", "pas", "plus", "ou", "où", "comment", "combien", "quand", "si", "on", "ai", "as", "avez", "faut", "fait", "the", "an", "of", "to", "is", "are", "for", "and", "or", "how", "what", "do", "does"}
 
 
 def _clean(text: str) -> str:
@@ -72,7 +69,7 @@ class FastEmbedEmbedder:
     pip install fastembed   |  check names with TextEmbedding.list_supported_models()"""
 
     def __init__(self, model: str):
-        from fastembed import TextEmbedding   # lazy import
+        from fastembed import TextEmbedding  # lazy import
         self.model_name = model
         self.model = TextEmbedding(model_name=model)
         self.name = f"fastembed:{model}"
@@ -90,7 +87,7 @@ class OpenAICompatEmbedder:
     """Any provider exposing an OpenAI-style /embeddings endpoint."""
 
     def __init__(self, model: str, base_url: str, api_key: str):
-        from openai import OpenAI              # lazy import
+        from openai import OpenAI  # lazy import
         self.client = OpenAI(base_url=base_url, api_key=api_key)
         self.model = model
         self.name = f"api:{model}"

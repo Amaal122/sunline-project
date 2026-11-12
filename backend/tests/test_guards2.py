@@ -106,7 +106,7 @@ def test_finish_reason_length_is_mapped_to_max_tokens():
 
 
 def test_escalation_marks_guests_as_unverified(env):
-    data, log = env
+    _data, log = env
     escalate_to_human(None, EscalateArgs(reason="cancellation", summary="annuler"), {"log_sf": log})
     escalate_to_human(None, EscalateArgs(reason="cancellation", summary="annuler"), {"log_sf": log, "user_id": str(ALICE_ID)})
     with log() as s:

@@ -7,6 +7,7 @@ Each case: {"question", "lang", "expected": "file.md" or null}
   expected = null  -> the knowledge base has no answer; the best score should stay BELOW the threshold
 Edit the file with real questions in the way your customers actually write them.
 """
+import contextlib
 import json
 import sys
 from collections import defaultdict
@@ -57,12 +58,12 @@ def evaluate(kb, cases):
 def main():
     # Windows consoles often use cp1252/cp850 and crash or garble Arabic and accents: force UTF-8.
     for stream in (sys.stdout, sys.stderr):
-        try:
-            stream.reconfigure(encoding="utf-8", errors="replace")
-        except Exception:  # noqa: BLE001
-            pass
-    path = sys.argv[1] if len(sys.argv) > 1 else "eval/kb_questions.json"
-    cases = json.load(open(path, encoding="utf-8"))
+        with contextlib.suppress(Exception):
+            stream.reconfigure(encoding="utf-8", errors="replace") 
+        path = sys.argv[1] if len(sys.argv) > 1 else "eval/kb_questions.json"
+    with open(path, encoding="utf-8") as f:
+        cases = json.load(f)
+    
     embedder = make_embedder(config)
     kb = KnowledgeBase(make_kb_session_factory(config.KB_DATABASE_URL), embedder, config.KB_MIN_SCORE)
     res = evaluate(kb, cases)

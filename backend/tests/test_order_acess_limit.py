@@ -3,7 +3,6 @@
 Sans Redis, sans base de données : limiteurs en mémoire avec horloge simulée.
 """
 
-import pytest
 from fastapi import HTTPException
 
 from app.services.order_access_limit import (

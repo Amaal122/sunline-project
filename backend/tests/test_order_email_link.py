@@ -12,21 +12,21 @@ BASE = settings.FRONTEND_ORIGIN.rstrip("/")
 
 
 def _order(user_id=None, token="tok_abc-123_XYZ", **overrides):
-    data = dict(
-        order_number="SL481203",
-        user_id=user_id,
-        access_token=token,
-        full_name="Amal Test",
-        address_line="12 rue de la Liberté",
-        city="Tunis",
-        governorate="Tunis",
-        postal_code="1000",
-        phone="+21698123456",
-        payment_method="COD",
-        subtotal=Decimal("189.00"),
-        delivery_fee=Decimal("8.00"),
-        total=Decimal("197.00"),
-        items=[
+    data = {
+        "order_number": "SL481203",
+        "user_id": user_id,
+        "access_token": token,
+        "full_name": "Amal Test",
+        "address_line": "12 rue de la Liberté",
+        "city": "Tunis",
+        "governorate": "Tunis",
+        "postal_code": "1000",
+        "phone": "+21698123456",
+        "payment_method": "COD",
+        "subtotal": Decimal("189.00"),
+        "delivery_fee": Decimal("8.00"),
+        "total": Decimal("197.00"),
+        "items": [
             SimpleNamespace(
                 product_name="Étoile High-Rise Straight",
                 color="Indigo",
@@ -35,7 +35,7 @@ def _order(user_id=None, token="tok_abc-123_XYZ", **overrides):
                 unit_price=Decimal("189.00"),
             )
         ],
-    )
+    }
     data.update(overrides)
     return SimpleNamespace(**data)
 

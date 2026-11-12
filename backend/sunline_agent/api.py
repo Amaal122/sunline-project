@@ -15,7 +15,6 @@ import logging
 import re
 import uuid
 from contextlib import contextmanager, nullcontext
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -29,7 +28,7 @@ from .limits import AttemptLimiter, RateLimiter
 
 class ChatIn(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
-    conversation_id: Optional[str] = Field(None, pattern=r"^[0-9a-f]{32}$")
+    conversation_id: str | None = Field(None, pattern=r"^[0-9a-f]{32}$")
     # There is deliberately NO history, user, role or email field: the server decides all of that.
 
 

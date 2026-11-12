@@ -1,4 +1,5 @@
 import getpass
+
 from sqlalchemy import select
 
 from app.core.database import get_db

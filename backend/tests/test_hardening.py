@@ -1,10 +1,9 @@
-import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
+from sunline_agent.agent import _execute_tool
 from sunline_agent.db import AgentRun, AgentStep, make_engine, make_session_factory
 from sunline_agent.grants import grant_sql
 from sunline_agent.limits import RedisAttemptLimiter, RedisRateLimiter
@@ -12,7 +11,6 @@ from sunline_agent.order_tools import GetOrderStatusArgs, get_order_status
 from sunline_agent.purge_logs import purge
 from sunline_agent.seed_demo import ALICE_ID, seed
 from sunline_agent.shop_tables import READ_TABLES, orders_read
-from sunline_agent.agent import _execute_tool
 
 PII_COLUMNS = {"full_name", "email", "address_line", "postal_code", "hashed_password"}
 
@@ -115,7 +113,7 @@ def test_if_redis_is_down_no_order_data_is_returned():
 
 def test_purge_deletes_old_runs_and_their_steps_only():
     sf = make_session_factory("sqlite:///:memory:")
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     with sf() as s:
         old, new = AgentRun(user_message="old", started_at=now - timedelta(days=45)), AgentRun(user_message="new", started_at=now)
         s.add_all([old, new])

@@ -3,7 +3,7 @@
 The summary is written by the model, so personal data the customer typed (phone numbers,
 emails) is masked BEFORE it is stored."""
 import re
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -20,7 +20,7 @@ class EscalateArgs(BaseModel):
     summary: str = Field(max_length=500, description="2-3 sentences for the team: what the customer wants "
                          "and what was already tried. Do NOT include phone numbers, emails or addresses.")
     language: str = Field("fr", max_length=20, description="Customer's language: fr, ar, darija or en.")
-    order_number: Optional[str] = Field(None, max_length=40, description="Order number, if the case is about one.")
+    order_number: str | None = Field(None, max_length=40, description="Order number, if the case is about one.")
 
 
 _EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
