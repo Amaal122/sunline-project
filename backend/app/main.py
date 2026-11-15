@@ -23,11 +23,16 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_ORIGIN],
+    allow_origins=[
+        "https://sunline-project.vercel.app",
+        "http://localhost:3000",
+    ],
+    allow_origin_regex=r"https://sunline-project-.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 app.include_router(health.router, prefix="/api")
 app.include_router(products.router, prefix="/api/products", tags=["products"])
