@@ -1,14 +1,14 @@
 """initial schema
 
 Revision ID: 0a2d0e2350a3
-Revises: 
+Revises:
 Create Date: 2026-08-10 17:49:57.158508
 
 """
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 revision = "0a2d0e2350a3"
 down_revision = None

@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { ProductDetailOut, ProductVariantOut } from "@/types/product";
 import { addCartItem, ApiError } from "@/lib/api";
 import { colorToHex } from "@/lib/colors";
 import { useAppState } from "@/context/AppStateContext";
 
 export default function ProductOptions({ product }: { product: ProductDetailOut }) {
-  const router = useRouter();
   const { refreshCart } = useAppState();
   const colors = [...new Set(product.variants.map((v) => v.color))];
   const [selectedColor, setSelectedColor] = useState(colors[0]);
@@ -27,14 +25,14 @@ export default function ProductOptions({ product }: { product: ProductDetailOut 
       setStatus("idle");
       await refreshCart(); // updates the header badge immediately
     } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        // Not logged in — cart requires auth on this API right now.
-        // Redirect to login, preserving where they came from.
-        router.push(`/login?next=/product/${product.slug}`);
-        return;
-      }
       setStatus("error");
-      setErrorMsg("Couldn't add to cart. Please try again.");
+      // Message détaillé PROVISOIRE pour diagnostiquer le 401 :
+      // on le simplifiera quand l'ajout au panier invité fonctionnera.
+      if (err instanceof ApiError) {
+        setErrorMsg(`Couldn't add to cart (${err.status}): ${err.message}`);
+      } else {
+        setErrorMsg("Couldn't add to cart. Please try again.");
+      }
     }
   }
 

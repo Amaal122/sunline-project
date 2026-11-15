@@ -2,14 +2,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.routers import health
-from app.routers import products
-from app.routers import auth
-from app.routers import cart
-from app.routers import wishlist
-from app.routers import orders
-from app.routers import admin_products
-from app.routers import admin_orders
+from app.routers import (
+    admin_orders,
+    admin_products,
+    agent,
+    auth,
+    cart,
+    health,
+    orders,
+    products,
+    wishlist,
+)
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -34,6 +37,9 @@ app.include_router(wishlist.router, prefix="/api/wishlist", tags=["wishlist"])
 app.include_router(orders.router, prefix="/api/orders", tags=["orders"])
 app.include_router(admin_products.router, prefix="/api", tags=["admin"])
 app.include_router(admin_orders.router, prefix="/api", tags=["admin"])
+app.include_router(agent.router, prefix="/api/agent", tags=["agent"])
+app.include_router(agent.admin_router, prefix="/api/agent/admin", tags=["agent-admin"])
+
 # Routers land here as each phase is built:
 # app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 # app.include_router(orders.router, prefix="/api/orders", tags=["orders"])

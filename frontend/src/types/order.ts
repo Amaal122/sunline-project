@@ -60,3 +60,7 @@ export interface OrderListItemOut {
   total: string;
   item_count: number;
 }
+// Réponse du checkout uniquement : contient le jeton secret de la commande
+export interface OrderCreatedOut extends OrderOut {
+  access_token: string;
+}

@@ -1,12 +1,11 @@
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
-from alembic import context
-
-from app.core.config import settings
-from app.core.database import Base
 
 import app.models  # noqa — uncomment once models exist, so Alembic can see them
+from alembic import context
+from app.core.config import settings
+from app.core.database import Base
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

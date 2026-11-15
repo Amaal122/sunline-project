@@ -1,11 +1,13 @@
-from typing import Literal, Optional
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import select, text
+from sqlalchemy.orm import Session, selectinload
+
 from app.core.database import get_db
-from app.models.product import Product, FitType
+from app.models.product import FitType, Product
 from app.models.product_variant import ProductVariant
-from app.schemas.product import ProductListOut, ProductDetailOut, ProductImageOut
+from app.schemas.product import ProductDetailOut, ProductImageOut, ProductListOut
 
 router = APIRouter(tags=["products"])
 
@@ -13,12 +15,12 @@ router = APIRouter(tags=["products"])
 @router.get("", response_model=list[ProductListOut])
 def list_products(
     db: Session = Depends(get_db),
-    fit: Optional[FitType] = Query(None),
-    min_price: Optional[float] = Query(None),
-    max_price: Optional[float] = Query(None),
-    color: Optional[str] = Query(None),
-    size: Optional[str] = Query(None),
-    q: Optional[str] = Query(None),
+    fit: FitType | None = Query(None),
+    min_price: float | None = Query(None),
+    max_price: float | None = Query(None),
+    color: str | None = Query(None),
+    size: str | None = Query(None),
+    q: str | None = Query(None),
     in_stock: bool = Query(False),
     sort: Literal["featured", "price-asc", "price-desc"] = Query("featured"),
 ):

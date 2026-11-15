@@ -8,6 +8,7 @@ from app.core.deps import get_optional_current_user
 from app.models.user import User
 from app.schemas.cart import CartItemIn, CartItemQuantityIn, CartOut
 from app.services.cart import (
+    assert_stock,
     build_guest_cart_out,
     build_user_cart_out,
     get_existing_session_key,
@@ -15,10 +16,9 @@ from app.services.cart import (
     get_user_cart,
     get_variant_or_404,
     increment_guest_cart_item,
+    read_guest_cart,
     set_user_cart_item_quantity,
     write_guest_cart_item,
-    assert_stock,
-    read_guest_cart,
 )
 
 router = APIRouter(tags=["cart"])

@@ -127,7 +127,15 @@ export default function CheckoutPage() {
         email: values.email || undefined, // omit rather than send "" — backend expects EmailStr | None
         payment_method: "COD",
       });
-      await refreshCart();
+            await refreshCart();
+      // Le jeton secret n'est renvoyé qu'une seule fois, à la création.
+      // On le garde pour la page de confirmation (propre à cet onglet).
+      try {
+        sessionStorage.setItem(`order_token:${order.order_number}`, order.access_token);
+      } catch {
+        // sessionStorage indisponible : la cliente pourra encore utiliser
+        // le lien de l'e-mail de confirmation.
+      }
       router.push(`/order/${order.order_number}`);
     } catch (err) {
       if (err instanceof ApiError) {

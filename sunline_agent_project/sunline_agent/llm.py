@@ -29,9 +29,9 @@ class AnthropicLLM:
         self.model = model
         self.max_tokens = max_tokens
 
-    def create(self, system: str, messages: list, tools: list) -> LLMResponse:
+    def create(self, system: str, messages: list, tools: list, max_tokens=None) -> LLMResponse:
         r = self.client.messages.create(
-            model=self.model, max_tokens=self.max_tokens,
+            model=self.model, max_tokens=max_tokens or self.max_tokens,
             system=system, messages=messages, tools=tools,
         )
         content = []
@@ -97,16 +97,24 @@ def from_openai_message(message) -> list:
     return blocks
 
 
+def stop_reason_from_openai(finish_reason, has_tools: bool) -> str:
+    """finish_reason 'length' means the answer was CUT OFF (the output budget ran out, which for
+    reasoning models includes their hidden thinking). Never present it as a finished answer."""
+    if finish_reason == "length":
+        return "max_tokens"
+    return "tool_use" if has_tools else "end_turn"
+
+
 class OpenAICompatLLM:
     def __init__(self, model: str, base_url: str = "http://localhost:11434/v1",
-                 api_key: str = "ollama", max_tokens: int = 1024):
+                 api_key: str = "ollama", max_tokens: int = 1024, timeout: float = 45.0):
         from openai import OpenAI  # lazy import
-        self.client = OpenAI(base_url=base_url, api_key=api_key)
+        self.client = OpenAI(base_url=base_url, api_key=api_key, timeout=timeout)
         self.model, self.max_tokens = model, max_tokens
 
-    def create(self, system: str, messages: list, tools: list) -> LLMResponse:
+    def create(self, system: str, messages: list, tools: list, max_tokens=None) -> LLMResponse:
         r = self.client.chat.completions.create(
-            model=self.model, max_tokens=self.max_tokens,
+            model=self.model, max_tokens=max_tokens or self.max_tokens,
             messages=to_openai_messages(system, messages),
             tools=to_openai_tools(tools), temperature=0.2,
         )
@@ -114,7 +122,7 @@ class OpenAICompatLLM:
         blocks = from_openai_message(msg)
         has_tools = any(b["type"] == "tool_use" for b in blocks)
         u = r.usage
-        return LLMResponse("tool_use" if has_tools else "end_turn", blocks,
+        return LLMResponse(stop_reason_from_openai(r.choices[0].finish_reason, has_tools), blocks,
                            getattr(u, "prompt_tokens", 0) or 0,
                            getattr(u, "completion_tokens", 0) or 0)
 

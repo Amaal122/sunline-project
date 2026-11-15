@@ -1,7 +1,7 @@
 import { ProductListOut, ProductDetailOut, FitType, SortOption } from "@/types/product";
 import { CartOut, CartItemIn, CartItemQuantityIn, WishlistOut } from "@/types/cart";
 import { UserRegister, UserLogin, UserOut, TokenOut } from "@/types/auth";
-import { CheckoutIn, OrderOut, OrderListItemOut } from "@/types/order";
+import { CheckoutIn, OrderOut, OrderListItemOut, OrderCreatedOut} from "@/types/order";
 import {
   ProductCreateIn,
   ProductUpdateIn,
@@ -10,6 +10,7 @@ import {
   AdminOrderListItemOut,
   OrderStatusUpdateIn,
 } from "@/types/admin";
+
 
 const API_URL =
   typeof window === "undefined"
@@ -39,27 +40,50 @@ class ApiError extends Error {
   }
 }
 
+// Émis quand un jeton de connexion est rejeté par l'API (expiré, invalide,
+// utilisateur supprimé). AppStateContext l'écoute pour repasser en « invité ».
+export const AUTH_EXPIRED_EVENT = "sunline:auth-expired";
+
 async function apiFetch<T>(
   path: string,
   options: RequestInit & { auth?: boolean } = {}
 ): Promise<T> {
   const { auth, ...init } = options;
-  const headers: Record<string, string> = {
+  const baseHeaders: Record<string, string> = {
     "Content-Type": "application/json",
     ...(init.headers as Record<string, string>),
   };
 
-  if (auth) {
-    const token = getAccessToken();
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-  }
+  const send = (withToken: boolean) => {
+    const headers = { ...baseHeaders };
+    if (withToken) {
+      const token = getAccessToken();
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+    }
+    return fetch(`${API_URL}${path}`, {
+      ...init,
+      headers,
+      credentials: "include",
+      cache: "no-store",
+    });
+  };
 
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers,
-    credentials: "include",
-    cache: "no-store",
-  });
+  const hadToken = !!auth && !!getAccessToken();
+  let res = await send(!!auth);
+
+  // Un jeton envoyé puis rejeté (401) est inutilisable : on l'efface, on
+  // prévient l'application, et on réessaie UNE fois sans jeton. Les routes
+  // ouvertes aux invités (panier, checkout, confirmation) passent alors ;
+  // les routes réservées aux comptes renvoient de nouveau 401, comme avant.
+  // Le 401 est levé avant l'exécution de la route, donc rejouer un POST
+  // ne crée rien en double.
+  if (res.status === 401 && hadToken) {
+    setAccessToken(null);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+    }
+    res = await send(false);
+  }
 
   if (!res.ok) {
     let detail = res.statusText;
@@ -75,6 +99,7 @@ async function apiFetch<T>(
   const text = await res.text();
   return text ? JSON.parse(text) : (undefined as T);
 }
+
 
 // --- Products ----------------------------------------------------------
 export interface ProductFilters {
@@ -182,7 +207,7 @@ export function removeWishlistItem(productId: string) {
 
 // --- Orders ----------------------------------------------------------
 export function checkout(payload: CheckoutIn) {
-  return apiFetch<OrderOut>("/api/orders", {
+  return apiFetch<OrderCreatedOut>("/api/orders", {
     method: "POST",
     auth: true,
     body: JSON.stringify(payload),
@@ -193,8 +218,11 @@ export function getMyOrders() {
   return apiFetch<OrderListItemOut[]>("/api/orders", { auth: true });
 }
 
-export function getOrderByNumber(orderNumber: string) {
-  return apiFetch<OrderOut>(`/api/orders/${orderNumber}`);
+export function getOrderByNumber(orderNumber: string, accessToken?: string) {
+  return apiFetch<OrderOut>(`/api/orders/${encodeURIComponent(orderNumber)}`, {
+    auth: true,
+    headers: accessToken ? { "X-Order-Token": accessToken } : undefined,
+  });
 }
 
 // =======================================================================

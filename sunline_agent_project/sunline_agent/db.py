@@ -41,6 +41,19 @@ class AgentStep(Base):
     created_at = Column(DateTime(timezone=True), default=_now)
 
 
+class AgentEscalation(Base):
+    """A case the agent could not (or must not) handle: a human follows up."""
+    __tablename__ = "agent_escalations"
+    id = Column(Integer, primary_key=True)
+    created_at = Column(DateTime(timezone=True), default=_now)
+    run_id = Column(Integer, index=True)
+    reason = Column(String(40))
+    summary = Column(Text)            # written by the model, personal data masked before saving
+    language = Column(String(20))
+    order_number = Column(String(40), nullable=True)
+    status = Column(String(20), default="open")     # open | done
+
+
 def make_engine(url: str):
     if url.endswith(":memory:") or url == "sqlite://":
         return create_engine(url, poolclass=StaticPool,

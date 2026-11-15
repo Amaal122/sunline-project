@@ -4,8 +4,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.product import FitType
 from app.models.order import OrderStatus, PaymentStatus
+from app.models.product import FitType
 
 
 class ProductUpdateIn(BaseModel):

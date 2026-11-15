@@ -28,8 +28,13 @@ class Settings(BaseSettings):
 
     # Email
     SENDER_EMAIL: str = "amal.bouguila@supcom.tn"
-    BREVO_API_KEY: str = ""
     SENDER_NAME: str = "SUNLINE"
+    ADMIN_EMAIL: str = ""
+    SMTP_HOST: str = "localhost"
+    SMTP_PORT: int = 1025
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_USE_TLS: bool = False
 
     # Sentry
     SENTRY_DSN: str = ""

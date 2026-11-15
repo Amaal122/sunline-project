@@ -50,6 +50,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             Orders
           </Link>
+          <Link
+          href="/admin/escalations"
+          style={{ fontWeight: pathname.startsWith("/admin/escalations") ? 700 : 400 }}
+          >
+          Support requests
+          </Link>
         </nav>
       </div>
       {children}

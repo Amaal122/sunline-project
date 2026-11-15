@@ -8,3 +8,10 @@ pytest>=8.0
 
 # optional, for real semantic embeddings running locally (week 2)
 # fastembed>=0.4
+
+# only to run the API tests (tests/test_api.py); your SUNLINE backend already has fastapi
+fastapi>=0.110
+httpx>=0.27
+
+# only for sunline_agent.state (your backend already has redis)
+redis>=5.0

@@ -1,21 +1,39 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    Header,
+    HTTPException,
+    Request,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_user, get_optional_current_user
 from app.models.user import User
-from app.schemas.order import CheckoutIn, OrderListItemOut, OrderOut
+from app.schemas.order import (
+    CheckoutIn,
+    OrderCreatedOut,
+    OrderListItemOut,
+    OrderOut,
+)
 from app.services.email import send_order_confirmation_email
 from app.services.order import (
     create_order_from_cart,
     get_order_by_number,
     list_user_orders,
 )
+from app.services.order_access_limit import (
+    OrderAccessGuard,
+    client_ip,
+    get_order_access_guard,
+)
 
 router = APIRouter(tags=["orders"])
 
 
-@router.post("", response_model=OrderOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=OrderCreatedOut, status_code=status.HTTP_201_CREATED)
 def checkout(
     payload: CheckoutIn,
     request: Request,
@@ -25,7 +43,11 @@ def checkout(
 ):
     """Converts the current cart (user or guest) into a real order.
     Guest checkout is intentional — Order.user_id is nullable and the
-    cart already supports guests via the session cookie."""
+    cart already supports guests via the session cookie.
+
+    The response includes `access_token`. It is the ONLY time the token
+    is returned by the API: the frontend must keep it (confirmation page,
+    e-mail link) because guests need it to read this order later."""
 
     recipient_email = current_user.email if current_user else payload.email
     if not recipient_email:
@@ -49,7 +71,8 @@ def get_my_orders(
     current_user: User = Depends(get_current_user),
 ):
     """Order history is account-only — guests have no way to list past
-    orders, only to look one up directly by order_number (see below)."""
+    orders, only to look one up directly by order_number (see below),
+    and only with the secret token received at checkout."""
     orders = list_user_orders(db, current_user)
     return [
         OrderListItemOut(
@@ -67,10 +90,29 @@ def get_my_orders(
 @router.get("/{order_number}", response_model=OrderOut)
 def get_order(
     order_number: str,
+    request: Request,
     db: Session = Depends(get_db),
+    x_order_token: str | None = Header(default=None),
     current_user: User | None = Depends(get_optional_current_user),
+    guard: OrderAccessGuard = Depends(get_order_access_guard),
 ):
-    """Powers the confirmation page. Guest orders are viewable by number
-    alone (like a receipt); orders tied to an account require being
-    logged in as that account."""
-    return get_order_by_number(db, order_number, current_user)
+    """Powers the confirmation / tracking page.
+
+    - Order tied to an account: only its logged-in owner can read it.
+    - Guest order: the secret token (header X-Order-Token) is required.
+      The SL-number alone grants nothing.
+    Every failure returns the same 404, whether the order exists or not.
+    Failures are counted per (IP, order) and per IP; once over the limit
+    the route answers 429 before touching the database. Successful reads
+    are never counted, so reloading the confirmation page is always safe."""
+    ip = client_ip(request)
+    guard.check(ip, order_number)  # 429 if this IP is blocked
+
+    try:
+        return get_order_by_number(
+            db, order_number, current_user, access_token=x_order_token
+        )
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_404_NOT_FOUND:
+            guard.record_failure(ip, order_number)
+        raise
