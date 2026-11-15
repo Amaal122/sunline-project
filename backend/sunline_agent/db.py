@@ -1,5 +1,6 @@
 """Logging tables: every run and every step (LLM call or tool call) is stored.
 This is your debugging tool, your evaluation data and your audit trail."""
+
 from datetime import UTC, datetime
 
 from sqlalchemy import (
@@ -28,7 +29,7 @@ class AgentRun(Base):
     started_at = Column(DateTime(timezone=True), default=_now)
     user_message = Column(Text)
     model = Column(String(100))
-    outcome = Column(String(30))          # answered | max_steps | budget | error
+    outcome = Column(String(30))  # answered | max_steps | budget | error
     final_answer = Column(Text)
     input_tokens = Column(Integer, default=0)
     output_tokens = Column(Integer, default=0)
@@ -40,7 +41,7 @@ class AgentStep(Base):
     id = Column(Integer, primary_key=True)
     run_id = Column(Integer, ForeignKey("agent_runs.id"), index=True)
     step_no = Column(Integer)
-    type = Column(String(10))             # llm | tool
+    type = Column(String(10))  # llm | tool
     tool_name = Column(String(100), nullable=True)
     input = Column(JSON, nullable=True)
     output = Column(JSON, nullable=True)
@@ -51,21 +52,23 @@ class AgentStep(Base):
 
 class AgentEscalation(Base):
     """A case the agent could not (or must not) handle: a human follows up."""
+
     __tablename__ = "agent_escalations"
     id = Column(Integer, primary_key=True)
     created_at = Column(DateTime(timezone=True), default=_now)
     run_id = Column(Integer, index=True)
     reason = Column(String(40))
-    summary = Column(Text)            # written by the model, personal data masked before saving
+    summary = Column(Text)  # written by the model, personal data masked before saving
     language = Column(String(20))
     order_number = Column(String(40), nullable=True)
-    status = Column(String(20), default="open")     # open | done
+    status = Column(String(20), default="open")  # open | done
 
 
 def make_engine(url: str):
     if url.endswith(":memory:") or url == "sqlite://":
-        return create_engine(url, poolclass=StaticPool,
-                             connect_args={"check_same_thread": False})
+        return create_engine(
+            url, poolclass=StaticPool, connect_args={"check_same_thread": False}
+        )
     return create_engine(url)
 
 

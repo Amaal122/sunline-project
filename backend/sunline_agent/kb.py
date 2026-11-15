@@ -5,6 +5,7 @@ normalised, so cosine == dot product). That is exact and fast for up to a few th
 chunks. To move to pgvector later: same columns, `embedding vector(N)`, and
 `ORDER BY embedding <=> :query_vec LIMIT k` instead of the Python loop in search().
 """
+
 import hashlib
 import re
 from pathlib import Path
@@ -21,12 +22,12 @@ KBBase = declarative_base()
 class KBChunk(KBBase):
     __tablename__ = "kb_chunks"
     id = Column(Integer, primary_key=True)
-    source = Column(String(200), index=True)      # file name, e.g. livraison.md
-    title = Column(String(300))                   # heading path, e.g. "Livraison > Délais"
+    source = Column(String(200), index=True)  # file name, e.g. livraison.md
+    title = Column(String(300))  # heading path, e.g. "Livraison > Délais"
     text = Column(Text)
     content_hash = Column(String(64), index=True)
-    embedder = Column(String(100), index=True)    # which model produced the vector
-    embedding = Column(JSON)                      # list of floats
+    embedder = Column(String(100), index=True)  # which model produced the vector
+    embedding = Column(JSON)  # list of floats
 
 
 class KBNotReady(RuntimeError):
@@ -85,11 +86,14 @@ def chunk_markdown(text: str, source: str, max_chars: int = 900):
             body.append(line)
     flush()
     for c in chunks:
-        c["hash"] = hashlib.sha256(f"{c['source']}\n{c['title']}\n{c['text']}".encode()).hexdigest()
+        c["hash"] = hashlib.sha256(
+            f"{c['source']}\n{c['title']}\n{c['text']}".encode()
+        ).hexdigest()
     return chunks
 
 
 # ------------------------------------------------------------ knowledge base
+
 
 class KnowledgeBase:
     def __init__(self, session_factory, embedder, min_score: float = 0.2):
@@ -97,7 +101,11 @@ class KnowledgeBase:
 
     def count(self) -> int:
         with self.sf() as s:
-            return len(s.scalars(select(KBChunk.id).where(KBChunk.embedder == self.embedder.name)).all())
+            return len(
+                s.scalars(
+                    select(KBChunk.id).where(KBChunk.embedder == self.embedder.name)
+                ).all()
+            )
 
     def index_directory(self, directory) -> dict:
         """(Re)build the index from *.md files. Unchanged chunks are not re-embedded."""
@@ -106,35 +114,71 @@ class KnowledgeBase:
             chunks += chunk_markdown(path.read_text(encoding="utf-8"), path.name)
         current = {c["hash"] for c in chunks}
         with self.sf() as s:
-            existing = {r.content_hash for r in s.scalars(
-                select(KBChunk).where(KBChunk.embedder == self.embedder.name))}
+            existing = {
+                r.content_hash
+                for r in s.scalars(
+                    select(KBChunk).where(KBChunk.embedder == self.embedder.name)
+                )
+            }
             # remove vectors of deleted/changed chunks and of any other embedder
-            stale = s.execute(delete(KBChunk).where(
-                (KBChunk.embedder != self.embedder.name) | (KBChunk.content_hash.not_in(current))))
+            stale = s.execute(
+                delete(KBChunk).where(
+                    (KBChunk.embedder != self.embedder.name)
+                    | (KBChunk.content_hash.not_in(current))
+                )
+            )
             new, seen = [], set()
             for c in chunks:
                 if c["hash"] not in existing and c["hash"] not in seen:
                     seen.add(c["hash"])
                     new.append(c)
             if new:
-                vectors = self.embedder.embed([f"{c['title']}\n{c['text']}" for c in new], "passage")
+                vectors = self.embedder.embed(
+                    [f"{c['title']}\n{c['text']}" for c in new], "passage"
+                )
                 for c, v in zip(new, vectors):
-                    s.add(KBChunk(source=c["source"], title=c["title"], text=c["text"],
-                                  content_hash=c["hash"], embedder=self.embedder.name, embedding=v))
+                    s.add(
+                        KBChunk(
+                            source=c["source"],
+                            title=c["title"],
+                            text=c["text"],
+                            content_hash=c["hash"],
+                            embedder=self.embedder.name,
+                            embedding=v,
+                        )
+                    )
             s.commit()
-        return {"chunks": len(current), "embedded_now": len(new),
-                "kept": len(current & existing), "removed": stale.rowcount or 0}
+        return {
+            "chunks": len(current),
+            "embedded_now": len(new),
+            "kept": len(current & existing),
+            "removed": stale.rowcount or 0,
+        }
 
     def search(self, query: str, top_k: int = 4):
         with self.sf() as s:
-            rows = s.scalars(select(KBChunk).where(KBChunk.embedder == self.embedder.name)).all()
+            rows = s.scalars(
+                select(KBChunk).where(KBChunk.embedder == self.embedder.name)
+            ).all()
             if not rows:
-                raise KBNotReady("Knowledge base is empty or was built with another embedder. "
-                                 "Run: python -m sunline_agent.kb_index")
+                raise KBNotReady(
+                    "Knowledge base is empty or was built with another embedder. "
+                    "Run: python -m sunline_agent.kb_index"
+                )
             qv = self.embedder.embed([query], "query")[0]
-            scored = sorted(((dot(qv, r.embedding), r) for r in rows), key=lambda x: -x[0])[:top_k]
-            return [{"id": r.id, "source": r.source, "title": r.title, "text": r.text, "score": float(sc)}
-                    for sc, r in scored]
+            scored = sorted(
+                ((dot(qv, r.embedding), r) for r in rows), key=lambda x: -x[0]
+            )[:top_k]
+            return [
+                {
+                    "id": r.id,
+                    "source": r.source,
+                    "title": r.title,
+                    "text": r.text,
+                    "score": float(sc),
+                }
+                for sc, r in scored
+            ]
 
     def expand_with_siblings(self, hits, max_chars: int = 2500):
         """Add the other chunks of the best hit's document (in file order) after the hits.
@@ -147,14 +191,27 @@ class KnowledgeBase:
             return hits
         have = {h["id"] for h in hits}
         with self.sf() as s:
-            rows = s.scalars(select(KBChunk).where(
-                KBChunk.embedder == self.embedder.name,
-                KBChunk.source == hits[0]["source"]).order_by(KBChunk.id)).all()
+            rows = s.scalars(
+                select(KBChunk)
+                .where(
+                    KBChunk.embedder == self.embedder.name,
+                    KBChunk.source == hits[0]["source"],
+                )
+                .order_by(KBChunk.id)
+            ).all()
         out, total = list(hits), sum(len(h["text"]) for h in hits)
         for r in rows:
             if r.id in have or total + len(r.text) > max_chars:
                 continue
-            out.append({"id": r.id, "source": r.source, "title": r.title, "text": r.text,
-                        "score": None, "context": True})
+            out.append(
+                {
+                    "id": r.id,
+                    "source": r.source,
+                    "title": r.title,
+                    "text": r.text,
+                    "score": None,
+                    "context": True,
+                }
+            )
             total += len(r.text)
         return out

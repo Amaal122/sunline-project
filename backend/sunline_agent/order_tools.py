@@ -11,6 +11,7 @@
 6. The agent receives a minimal view: no name, phone, email, street address or postal code,
    and no database ids.
 """
+
 import hmac
 import re
 import uuid
@@ -31,16 +32,26 @@ STATUS_MEANING = {
     "cancelled": "Order was cancelled.",
 }
 
-NOT_FOUND = {"found": False,
-             "message": "No order matches. Ask the customer to check the order number and, if they "
-                        "are not logged in, the phone number used at checkout, or to contact an advisor."}
-LOCKED = {"found": False, "locked": True,
-          "message": "Too many failed attempts. Do not retry. Tell the customer a human advisor will help."}
-NEEDS_PHONE = {"found": False, "needs": "phone",
-               "message": "The customer is not logged in. Ask for the phone number used at checkout."}
-NOT_LOGGED_IN = {"logged_in": False,
-                 "message": "The customer is not logged in. Ask for the order number and the phone "
-                            "number used at checkout, or ask them to log in."}
+NOT_FOUND = {
+    "found": False,
+    "message": "No order matches. Ask the customer to check the order number and, if they "
+    "are not logged in, the phone number used at checkout, or to contact an advisor.",
+}
+LOCKED = {
+    "found": False,
+    "locked": True,
+    "message": "Too many failed attempts. Do not retry. Tell the customer a human advisor will help.",
+}
+NEEDS_PHONE = {
+    "found": False,
+    "needs": "phone",
+    "message": "The customer is not logged in. Ask for the phone number used at checkout.",
+}
+NOT_LOGGED_IN = {
+    "logged_in": False,
+    "message": "The customer is not logged in. Ask for the order number and the phone "
+    "number used at checkout, or ask them to log in.",
+}
 
 
 class GetMyOrdersArgs(BaseModel):
@@ -48,13 +59,19 @@ class GetMyOrdersArgs(BaseModel):
 
 
 class GetOrderStatusArgs(BaseModel):
-    order_number: str = Field(max_length=40, description="Order number given by the customer.")
-    phone: str | None = Field(None, max_length=30,
-                                 description="Phone number used at checkout. Needed only when the "
-                                             "customer is not logged in.")
+    order_number: str = Field(
+        max_length=40, description="Order number given by the customer."
+    )
+    phone: str | None = Field(
+        None,
+        max_length=30,
+        description="Phone number used at checkout. Needed only when the "
+        "customer is not logged in.",
+    )
 
 
 # ------------------------------------------------------------------ helpers
+
 
 def _as_uuid(value):
     if value is None:
@@ -93,46 +110,84 @@ def _days_since(dt):
 
 
 def _item_count(session, order_id):
-    return session.execute(select(func.coalesce(func.sum(order_items.c.quantity), 0))
-                           .where(order_items.c.order_id == order_id)).scalar_one()
+    return session.execute(
+        select(func.coalesce(func.sum(order_items.c.quantity), 0)).where(
+            order_items.c.order_id == order_id
+        )
+    ).scalar_one()
 
 
 def _summary(session, o):
     status = str(o["status"]).lower()
-    return {"order_number": o["order_number"], "status": status,
-            "status_meaning": STATUS_MEANING.get(status, ""),
-            "payment_status": str(o["payment_status"]).lower(),
-            "ordered_on": o["created_at"].date().isoformat() if o["created_at"] else None,
-            "days_since_order": _days_since(o["created_at"]),
-            "total": o["total"], "item_count": _item_count(session, o["id"])}
+    return {
+        "order_number": o["order_number"],
+        "status": status,
+        "status_meaning": STATUS_MEANING.get(status, ""),
+        "payment_status": str(o["payment_status"]).lower(),
+        "ordered_on": o["created_at"].date().isoformat() if o["created_at"] else None,
+        "days_since_order": _days_since(o["created_at"]),
+        "total": o["total"],
+        "item_count": _item_count(session, o["id"]),
+    }
 
 
 def _view(session, o):
     """The ONLY order shape the agent ever sees."""
-    items = session.execute(select(order_items).where(order_items.c.order_id == o["id"])
-                            .order_by(order_items.c.product_name)).mappings().all()
+    items = (
+        session.execute(
+            select(order_items)
+            .where(order_items.c.order_id == o["id"])
+            .order_by(order_items.c.product_name)
+        )
+        .mappings()
+        .all()
+    )
     out = _summary(session, o)
     out.pop("item_count")
-    out.update({
-        "payment_method": str(o["payment_method"]).lower(),
-        "subtotal": o["subtotal"], "delivery_fee": o["delivery_fee"],
-        "delivery_to": {"governorate": o["governorate"], "city": o["city"]},
-        "items": [{"product_name": i["product_name"], "color": i["color"], "size": i["size"],
-                   "quantity": i["quantity"], "unit_price": i["unit_price"],
-                   "line_total": i["unit_price"] * i["quantity"]} for i in items],
-    })
+    out.update(
+        {
+            "payment_method": str(o["payment_method"]).lower(),
+            "subtotal": o["subtotal"],
+            "delivery_fee": o["delivery_fee"],
+            "delivery_to": {"governorate": o["governorate"], "city": o["city"]},
+            "items": [
+                {
+                    "product_name": i["product_name"],
+                    "color": i["color"],
+                    "size": i["size"],
+                    "quantity": i["quantity"],
+                    "unit_price": i["unit_price"],
+                    "line_total": i["unit_price"] * i["quantity"],
+                }
+                for i in items
+            ],
+        }
+    )
     return out
 
 
 # -------------------------------------------------------------------- tools
 
+
 def get_my_orders(session, args: GetMyOrdersArgs, ctx: dict):
     uid = _as_uuid(ctx.get("user_id"))
     if uid is None:
         return NOT_LOGGED_IN
-    rows = session.execute(select(orders).where(orders.c.user_id == uid)
-                           .order_by(orders.c.created_at.desc()).limit(args.limit)).mappings().all()
-    return {"logged_in": True, "count": len(rows), "orders": [_summary(session, r) for r in rows]}
+    rows = (
+        session.execute(
+            select(orders)
+            .where(orders.c.user_id == uid)
+            .order_by(orders.c.created_at.desc())
+            .limit(args.limit)
+        )
+        .mappings()
+        .all()
+    )
+    return {
+        "logged_in": True,
+        "count": len(rows),
+        "orders": [_summary(session, r) for r in rows],
+    }
 
 
 def get_order_status(session, args: GetOrderStatusArgs, ctx: dict):
@@ -151,21 +206,32 @@ def get_order_status(session, args: GetOrderStatusArgs, ctx: dict):
         return NOT_FOUND
 
     # The IP limiter has a higher threshold: many customers share one mobile-network address.
-    if (limiter and any(limiter.blocked(k) for k in keys)) or (ip_limiter and ip and ip_limiter.blocked(f"ip:{ip}")):
+    if (limiter and any(limiter.blocked(k) for k in keys)) or (
+        ip_limiter and ip and ip_limiter.blocked(f"ip:{ip}")
+    ):
         return LOCKED
     if number is None:
         return fail()
     if uid is None and not args.phone:
-        return NEEDS_PHONE                       # nothing was looked up: no information leaked
+        return NEEDS_PHONE  # nothing was looked up: no information leaked
 
-    order = session.execute(select(orders).where(func.upper(orders.c.order_number) == number)
-                            ).mappings().first()
+    order = (
+        session.execute(
+            select(orders).where(func.upper(orders.c.order_number) == number)
+        )
+        .mappings()
+        .first()
+    )
     allowed = False
     if order is not None:
         if uid is not None and order["user_id"] == uid:
-            allowed = True                                           # their own order
-        elif order["user_id"] is None and args.phone and phones_match(order["phone"], args.phone):
-            allowed = True                                           # guest order + matching phone
+            allowed = True  # their own order
+        elif (
+            order["user_id"] is None
+            and args.phone
+            and phones_match(order["phone"], args.phone)
+        ):
+            allowed = True  # guest order + matching phone
     if not allowed:
         return fail()
     return {"found": True, "order": _view(session, order)}

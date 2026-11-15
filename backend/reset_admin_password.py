@@ -9,7 +9,7 @@ from app.models.user import User
 EMAIL = "admin@sunline.tn"
 
 db = next(get_db())
-print("Database used by the app:", db.get_bind().url)   # SQLAlchemy hides the password
+print("Database used by the app:", db.get_bind().url)  # SQLAlchemy hides the password
 
 user = db.execute(select(User).where(User.email == EMAIL)).scalar_one_or_none()
 if user is None:

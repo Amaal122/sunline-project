@@ -28,14 +28,22 @@ def build_admin_router(*, get_admin, log_sf) -> APIRouter:
     router = APIRouter()
 
     @router.get("/escalations", response_model=list[EscalationOut])
-    def list_escalations(status: Literal["open", "done"] | None = None,
-                         limit: int = Query(50, ge=1, le=200),
-                         admin=Depends(get_admin)):
+    def list_escalations(
+        status: Literal["open", "done"] | None = None,
+        limit: int = Query(50, ge=1, le=200),
+        admin=Depends(get_admin),
+    ):
         with log_sf() as s:
-            q = select(AgentEscalation).order_by(AgentEscalation.created_at.desc()).limit(limit)
+            q = (
+                select(AgentEscalation)
+                .order_by(AgentEscalation.created_at.desc())
+                .limit(limit)
+            )
             if status:
                 q = q.where(AgentEscalation.status == status)
-            return [EscalationOut.model_validate(r) for r in s.execute(q).scalars().all()]
+            return [
+                EscalationOut.model_validate(r) for r in s.execute(q).scalars().all()
+            ]
 
     @router.patch("/escalations/{esc_id}", response_model=EscalationOut)
     def set_status(esc_id: int, body: StatusIn, admin=Depends(get_admin)):

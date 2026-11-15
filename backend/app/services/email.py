@@ -161,14 +161,19 @@ def send_order_confirmation_email(order: Order, recipient_email: str) -> None:
     )
 
 
-def send_escalation_email(reference: str, reason: str, summary: str,
-                          language: str, order_number: str | None) -> None:
+def send_escalation_email(
+    reference: str, reason: str, summary: str, language: str, order_number: str | None
+) -> None:
     """Notify the configured administrator after a human handoff is recorded."""
     recipient = settings.ADMIN_EMAIL or settings.SENDER_EMAIL
     if not recipient:
-        logger.warning("Escalation %s recorded but no administrator email is configured", reference)
+        logger.warning(
+            "Escalation %s recorded but no administrator email is configured", reference
+        )
         return
-    order_line = f"<p><strong>Order:</strong> {escape(order_number)}</p>" if order_number else ""
+    order_line = (
+        f"<p><strong>Order:</strong> {escape(order_number)}</p>" if order_number else ""
+    )
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
       <h2>New SUNLINE customer escalation</h2>
@@ -187,10 +192,13 @@ def send_escalation_email(reference: str, reason: str, summary: str,
         html_content=html,
     )
 
-def notify_escalation_async(reference: str, reason: str, summary: str,
-                            language: str, order_number: str | None) -> None:
+
+def notify_escalation_async(
+    reference: str, reason: str, summary: str, language: str, order_number: str | None
+) -> None:
     """Called by the agent after a handoff is recorded. Never blocks and never raises: the ticket
     is already saved, so a mail problem must not affect thecustomer's conversation."""
+
     def _run() -> None:
         try:
             send_escalation_email(reference, reason, summary, language, order_number)

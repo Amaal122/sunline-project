@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin/products", tags=["admin"])
 
+
 def _product_or_404(db: Session, product_id: uuid.UUID) -> Product:
     product = (
         db.query(Product)
@@ -135,7 +136,9 @@ def update_product(
     if payload.slug and payload.slug != product.slug:
         clash = db.query(Product).filter(Product.slug == payload.slug).first()
         if clash:
-            raise HTTPException(status_code=400, detail="A product with this slug already exists")
+            raise HTTPException(
+                status_code=400, detail="A product with this slug already exists"
+            )
 
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(product, field, value)
@@ -213,16 +216,22 @@ def update_product_variant(
 ):
     variant = (
         db.query(ProductVariant)
-        .filter(ProductVariant.id == variant_id, ProductVariant.product_id == product_id)
+        .filter(
+            ProductVariant.id == variant_id, ProductVariant.product_id == product_id
+        )
         .first()
     )
     if not variant:
         raise HTTPException(status_code=404, detail="Variant not found")
 
     if payload.sku and payload.sku != variant.sku:
-        clash = db.query(ProductVariant).filter(ProductVariant.sku == payload.sku).first()
+        clash = (
+            db.query(ProductVariant).filter(ProductVariant.sku == payload.sku).first()
+        )
         if clash:
-            raise HTTPException(status_code=400, detail="A variant with this SKU already exists")
+            raise HTTPException(
+                status_code=400, detail="A variant with this SKU already exists"
+            )
 
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(variant, field, value)
@@ -241,7 +250,9 @@ def delete_product_variant(
 ):
     variant = (
         db.query(ProductVariant)
-        .filter(ProductVariant.id == variant_id, ProductVariant.product_id == product_id)
+        .filter(
+            ProductVariant.id == variant_id, ProductVariant.product_id == product_id
+        )
         .first()
     )
     if not variant:
@@ -355,4 +366,3 @@ def delete_product_image(
     for index, existing_image in enumerate(remaining):
         existing_image.position = index
     db.commit()
-

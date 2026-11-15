@@ -233,9 +233,7 @@ def _can_view_order(
     if not access_token or not order.access_token:
         return False
     # encode() so a non-ASCII token cannot raise TypeError (-> 500)
-    return secrets.compare_digest(
-        order.access_token.encode(), access_token.encode()
-    )
+    return secrets.compare_digest(order.access_token.encode(), access_token.encode())
 
 
 def get_order_by_number(

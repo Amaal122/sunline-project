@@ -3,6 +3,7 @@
     python -m sunline_agent.show_run 26      (a run number)
     python -m sunline_agent.show_run         (the latest run)
 """
+
 import contextlib
 import sys
 
@@ -25,27 +26,43 @@ def main():
         if run is None:
             print("Run not found.")
             return
-        print(f"RUN #{run.id} [{run.outcome}] tokens in/out: {run.input_tokens}/{run.output_tokens}")
+        print(
+            f"RUN #{run.id} [{run.outcome}] tokens in/out: {run.input_tokens}/{run.output_tokens}"
+        )
         print(f"QUESTION: {run.user_message}\n")
-        for st in s.scalars(select(AgentStep).where(AgentStep.run_id == run.id).order_by(AgentStep.id)):
+        for st in s.scalars(
+            select(AgentStep).where(AgentStep.run_id == run.id).order_by(AgentStep.id)
+        ):
             if st.error:
                 print(f"  [{st.type}] ERROR: {st.error}")
             elif st.type == "guard":
                 o = st.output or {}
                 if o.get("truncated"):
-                    print(f"  [GUARD] the answer was cut off (output budget); retried with a bigger budget. tokens={o.get('tokens')}")
+                    print(
+                        f"  [GUARD] the answer was cut off (output budget); retried with a bigger budget. tokens={o.get('tokens')}"
+                    )
                 elif o.get("missing_tool"):
-                    print("  [GUARD] the model answered about an order without calling an order tool; asked again")
+                    print(
+                        "  [GUARD] the model answered about an order without calling an order tool; asked again"
+                    )
                 else:
-                    print(f"  [GUARD] blocked an answer with numbers not found in the tool results: {o.get('ungrounded_numbers')}")
+                    print(
+                        f"  [GUARD] blocked an answer with numbers not found in the tool results: {o.get('ungrounded_numbers')}"
+                    )
             elif st.type == "llm":
                 calls = (st.output or {}).get("tool_calls") or []
-                print(f"  [llm] asked for tools: {calls}" if calls else "  [llm] wrote the answer")
+                print(
+                    f"  [llm] asked for tools: {calls}"
+                    if calls
+                    else "  [llm] wrote the answer"
+                )
             else:
                 print(f"  [tool] {st.tool_name} {st.input}")
                 out = st.output or {}
                 if st.tool_name == "search_knowledge_base":
-                    print(f"         found={out.get('found')} best_score={out.get('best_score')}")
+                    print(
+                        f"         found={out.get('found')} best_score={out.get('best_score')}"
+                    )
                     for p in out.get("passages", []):
                         tag = f"score {p['score']}" if "score" in p else "context"
                         print(f"         - {p['topic']} ({tag})")

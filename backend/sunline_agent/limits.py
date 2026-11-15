@@ -2,12 +2,15 @@
 
 In-memory version (one server process). In production use Redis, which you already run in
 docker-compose: same interface, keys with an expiry."""
+
 import time
 from collections import defaultdict
 
 
 class AttemptLimiter:
-    def __init__(self, max_failures: int = 5, window_seconds: int = 900, clock=time.time):
+    def __init__(
+        self, max_failures: int = 5, window_seconds: int = 900, clock=time.time
+    ):
         self.max_failures, self.window, self.clock = max_failures, window_seconds, clock
         self._fails = defaultdict(list)
 
@@ -47,8 +50,21 @@ class RedisAttemptLimiter:
     it survives restarts. If Redis is down, the exception propagates and the tool returns an
     error (fail closed: no order data is ever returned without the check)."""
 
-    def __init__(self, client, max_failures=5, window_seconds=900, prefix="sunline:agent:fail:", clock=time.time):
-        self.r, self.max_failures, self.window, self.prefix, self.clock = client, max_failures, window_seconds, prefix, clock
+    def __init__(
+        self,
+        client,
+        max_failures=5,
+        window_seconds=900,
+        prefix="sunline:agent:fail:",
+        clock=time.time,
+    ):
+        self.r, self.max_failures, self.window, self.prefix, self.clock = (
+            client,
+            max_failures,
+            window_seconds,
+            prefix,
+            clock,
+        )
 
     def _clean(self, key):
         k = self.prefix + key
@@ -60,17 +76,32 @@ class RedisAttemptLimiter:
 
     def record_failure(self, key: str):
         import uuid
+
         k, now = self._clean(key), self.clock()
         self.r.zadd(k, {f"{now}:{uuid.uuid4().hex[:8]}": now})
         self.r.expire(k, self.window)
 
 
 class RedisRateLimiter:
-    def __init__(self, client, max_events, window_seconds, prefix="sunline:agent:rate:", clock=time.time):
-        self.r, self.max_events, self.window, self.prefix, self.clock = client, max_events, window_seconds, prefix, clock
+    def __init__(
+        self,
+        client,
+        max_events,
+        window_seconds,
+        prefix="sunline:agent:rate:",
+        clock=time.time,
+    ):
+        self.r, self.max_events, self.window, self.prefix, self.clock = (
+            client,
+            max_events,
+            window_seconds,
+            prefix,
+            clock,
+        )
 
     def allow(self, key: str) -> bool:
         import uuid
+
         k, now = self.prefix + key, self.clock()
         self.r.zremrangebyscore(k, 0, now - self.window)
         if self.r.zcard(k) >= self.max_events:

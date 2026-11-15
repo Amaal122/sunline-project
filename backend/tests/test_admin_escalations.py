@@ -10,10 +10,17 @@ URL = "/api/agent/admin/escalations"
 def _client(get_admin):
     log_sf = make_session_factory("sqlite://")
     with log_sf() as s:
-        s.add(AgentEscalation(reason="other", summary="cas de test", language="fr", status="open"))
+        s.add(
+            AgentEscalation(
+                reason="other", summary="cas de test", language="fr", status="open"
+            )
+        )
         s.commit()
     app = FastAPI()
-    app.include_router(build_admin_router(get_admin=get_admin, log_sf=log_sf), prefix="/api/agent/admin")
+    app.include_router(
+        build_admin_router(get_admin=get_admin, log_sf=log_sf),
+        prefix="/api/agent/admin",
+    )
     return TestClient(app)
 
 

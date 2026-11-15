@@ -2,6 +2,7 @@ import os
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     pass
@@ -18,17 +19,23 @@ LOG_DATABASE_URL = os.getenv("LOG_DATABASE_URL", "sqlite:///agent_logs.db")
 # ---- knowledge base (week 2)
 KB_DATABASE_URL = os.getenv("KB_DATABASE_URL", "sqlite:///kb.db")
 KB_DIR = os.getenv("KB_DIR", "knowledge")
-KB_MIN_SCORE = float(os.getenv("KB_MIN_SCORE", "0.2"))   # below this, "I don't know"; tune from logs
-EMBED_PROVIDER = os.getenv("EMBED_PROVIDER", "hashing")   # hashing | fastembed | api
+KB_MIN_SCORE = float(
+    os.getenv("KB_MIN_SCORE", "0.2")
+)  # below this, "I don't know"; tune from logs
+EMBED_PROVIDER = os.getenv("EMBED_PROVIDER", "hashing")  # hashing | fastembed | api
 EMBED_MODEL = os.getenv("EMBED_MODEL", "")
 EMBED_BASE_URL = os.getenv("EMBED_BASE_URL", "")
 EMBED_API_KEY = os.getenv("EMBED_API_KEY", "")
 
-MAX_STEPS = 6            # hard cap on LLM calls per user message
-TOKEN_BUDGET = 20_000    # hard cap on total tokens per run
-MAX_OUTPUT_TOKENS = 2048   # reasoning models spend part of this budget on hidden thinking
-MAX_HISTORY_TURNS = 4    # previous Q&A pairs sent back to the model (keeps tokens low)
+MAX_STEPS = 6  # hard cap on LLM calls per user message
+TOKEN_BUDGET = 20_000  # hard cap on total tokens per run
+MAX_OUTPUT_TOKENS = (
+    2048  # reasoning models spend part of this budget on hidden thinking
+)
+MAX_HISTORY_TURNS = 4  # previous Q&A pairs sent back to the model (keeps tokens low)
 
 # ---- human handoff (week 3)
-ESCALATION_CONTACT = os.getenv("ESCALATION_CONTACT", "")   # e.g. "WhatsApp +216 XX XXX XXX / contact@sunline.tn"
-ESCALATION_HOURS = os.getenv("ESCALATION_HOURS", "")       # e.g. "lundi-samedi, 9h-18h"
+ESCALATION_CONTACT = os.getenv(
+    "ESCALATION_CONTACT", ""
+)  # e.g. "WhatsApp +216 XX XXX XXX / contact@sunline.tn"
+ESCALATION_HOURS = os.getenv("ESCALATION_HOURS", "")  # e.g. "lundi-samedi, 9h-18h"

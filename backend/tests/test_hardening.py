@@ -22,7 +22,9 @@ class FakeRedis:
         self.z, self.kv = {}, {}
 
     def zremrangebyscore(self, k, lo, hi):
-        self.z[k] = {m: sc for m, sc in self.z.get(k, {}).items() if not (lo <= sc <= hi)}
+        self.z[k] = {
+            m: sc for m, sc in self.z.get(k, {}).items() if not (lo <= sc <= hi)
+        }
 
     def zcard(self, k):
         return len(self.z.get(k, {}))
@@ -42,10 +44,13 @@ class FakeRedis:
 
 # ------------------------------------------------------------- least privilege
 
+
 def test_read_models_contain_no_personal_data_columns():
     cols = {c.name for t in READ_TABLES for c in t.columns}
     assert not cols & PII_COLUMNS, cols & PII_COLUMNS
-    assert "phone" in {c.name for c in orders_read.columns}          # needed only to verify guests
+    assert "phone" in {
+        c.name for c in orders_read.columns
+    }  # needed only to verify guests
 
 
 def test_generated_grants_exclude_users_and_personal_columns():
@@ -53,7 +58,12 @@ def test_generated_grants_exclude_users_and_personal_columns():
     assert "users" not in sql.replace("agent_ro", "")
     for col in PII_COLUMNS:
         assert col not in sql
-    assert "GRANT SELECT (id, order_number" in sql and "INSERT" not in sql and "UPDATE" not in sql and "DELETE" not in sql
+    assert (
+        "GRANT SELECT (id, order_number" in sql
+        and "INSERT" not in sql
+        and "UPDATE" not in sql
+        and "DELETE" not in sql
+    )
 
 
 def test_order_queries_never_select_personal_columns():
@@ -61,10 +71,17 @@ def test_order_queries_never_select_personal_columns():
     seed(engine)
     statements = []
     from sqlalchemy import event
-    event.listen(engine, "before_cursor_execute", lambda c, cur, st, p, ctx, many: statements.append(st))
+
+    event.listen(
+        engine,
+        "before_cursor_execute",
+        lambda c, cur, st, p, ctx, many: statements.append(st),
+    )
     Session = sessionmaker(engine)
     with Session() as s:
-        get_order_status(s, GetOrderStatusArgs(order_number="DEV-1001"), {"user_id": str(ALICE_ID)})
+        get_order_status(
+            s, GetOrderStatusArgs(order_number="DEV-1001"), {"user_id": str(ALICE_ID)}
+        )
     sql = " ".join(statements).lower()
     assert "orders" in sql
     for col in PII_COLUMNS:
@@ -73,10 +90,13 @@ def test_order_queries_never_select_personal_columns():
 
 # ------------------------------------------------------------------- Redis
 
+
 def test_redis_attempt_limiter_blocks_expires_and_is_shared():
     now, r = [1000.0], FakeRedis()
     a = RedisAttemptLimiter(r, max_failures=3, window_seconds=60, clock=lambda: now[0])
-    b = RedisAttemptLimiter(r, max_failures=3, window_seconds=60, clock=lambda: now[0])   # "another process"
+    b = RedisAttemptLimiter(
+        r, max_failures=3, window_seconds=60, clock=lambda: now[0]
+    )  # "another process"
     for _ in range(3):
         a.record_failure("order:X")
     assert a.blocked("order:X") and b.blocked("order:X") and not b.blocked("order:Y")
@@ -104,21 +124,33 @@ def test_if_redis_is_down_no_order_data_is_returned():
     engine = make_engine("sqlite:///:memory:")
     seed(engine)
     with sessionmaker(engine)() as s:
-        out, err = _execute_tool("get_order_status", {"order_number": "DEV-1001"}, s,
-                                 {"user_id": str(ALICE_ID), "limiter": BrokenLimiter(), "session_id": "x"})
-    assert out is None and "ConnectionError" in err                      # fail closed
+        out, err = _execute_tool(
+            "get_order_status",
+            {"order_number": "DEV-1001"},
+            s,
+            {"user_id": str(ALICE_ID), "limiter": BrokenLimiter(), "session_id": "x"},
+        )
+    assert out is None and "ConnectionError" in err  # fail closed
 
 
 # --------------------------------------------------------------- log retention
+
 
 def test_purge_deletes_old_runs_and_their_steps_only():
     sf = make_session_factory("sqlite:///:memory:")
     now = datetime.now(UTC)
     with sf() as s:
-        old, new = AgentRun(user_message="old", started_at=now - timedelta(days=45)), AgentRun(user_message="new", started_at=now)
+        old, new = AgentRun(
+            user_message="old", started_at=now - timedelta(days=45)
+        ), AgentRun(user_message="new", started_at=now)
         s.add_all([old, new])
         s.commit()
-        s.add_all([AgentStep(run_id=old.id, step_no=1, type="llm"), AgentStep(run_id=new.id, step_no=1, type="llm")])
+        s.add_all(
+            [
+                AgentStep(run_id=old.id, step_no=1, type="llm"),
+                AgentStep(run_id=new.id, step_no=1, type="llm"),
+            ]
+        )
         s.commit()
     assert purge(sf, days=30) == {"runs": 1, "steps": 1}
     with sf() as s:

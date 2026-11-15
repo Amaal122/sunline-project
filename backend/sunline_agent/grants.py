@@ -5,6 +5,7 @@
 
 The role can read ONLY the columns listed in shop_tables.READ_TABLES: no users table (password hashes),
 no names, emails, street addresses or postal codes, and it can never write or delete anything."""
+
 import sys
 
 from .shop_tables import READ_TABLES
