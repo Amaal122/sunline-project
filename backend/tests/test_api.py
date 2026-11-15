@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 import json
 import uuid
 from types import SimpleNamespace as NS

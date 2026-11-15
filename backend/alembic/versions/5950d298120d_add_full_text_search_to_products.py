@@ -14,7 +14,8 @@ def upgrade() -> None:
 
     # A custom text-search config: French stemming + accent stripping combined.
     # Wrapped in a DO block so re-running migrations never fails if it exists.
-    op.execute("""
+    op.execute(
+        """
         DO $$
         BEGIN
             IF NOT EXISTS (SELECT 1 FROM pg_ts_config WHERE cfgname = 'fr_unaccent') THEN
@@ -24,20 +25,23 @@ def upgrade() -> None:
                     WITH unaccent, french_stem;
             END IF;
         END$$;
-    """)
+    """
+    )
 
     # GENERATED ALWAYS ... STORED means Postgres recalculates this column
     # itself on every INSERT/UPDATE — no trigger, no app-side sync code,
     # works identically whether a row comes from seed.py, a future admin
     # endpoint, or a raw SQL script.
-    op.execute("""
+    op.execute(
+        """
         ALTER TABLE products
         ADD COLUMN search_vector tsvector
         GENERATED ALWAYS AS (
             setweight(to_tsvector('fr_unaccent', coalesce(name, '')), 'A') ||
             setweight(to_tsvector('fr_unaccent', coalesce(description, '')), 'B')
         ) STORED;
-    """)
+    """
+    )
 
     op.execute(
         "CREATE INDEX ix_products_search_vector ON products USING GIN (search_vector);"

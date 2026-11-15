@@ -77,13 +77,16 @@ def build_order_link(order: Order) -> str:
 def send_order_confirmation_email(order: Order, recipient_email: str) -> None:
     # Everything typed by the customer is escaped: an e-mail is HTML, so a
     # name or address containing "<" would otherwise be injected as markup.
-    items_rows = "".join(f"""
+    items_rows = "".join(
+        f"""
         <tr style="border-bottom: 1px solid #eee;">
           <td style="padding: 10px 0;">{escape(item.product_name)} — {escape(item.color)} / {escape(item.size)}</td>
           <td style="padding: 10px 0; text-align: center;">{item.quantity}</td>
           <td style="padding: 10px 0; text-align: right;">{item.unit_price} DT</td>
         </tr>
-        """ for item in order.items)
+        """
+        for item in order.items
+    )
 
     payment_method = (
         order.payment_method.value
