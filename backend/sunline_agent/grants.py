@@ -4,7 +4,8 @@
     Get-Content agent_ro.sql | docker exec -i sunline-postgres psql -U sunline -d sunline_agent_dev -v agent_pw=CHANGE_ME
 
 The role can read ONLY the columns listed in shop_tables.READ_TABLES: no users table (password hashes),
-no names, emails, street addresses or postal codes, and it can never write or delete anything."""
+no names, emails, street addresses or postal codes, and it can never write or delete anything.
+"""
 
 import sys
 

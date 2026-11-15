@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 import redis
 
 from app.core.config import settings
@@ -13,14 +15,31 @@ from sunline_agent.embeddings import make_embedder
 from sunline_agent.kb import KnowledgeBase, make_kb_session_factory
 from sunline_agent.llm import make_llm
 
+log_sf = make_session_factory(config.LOG_DATABASE_URL)
 store = RedisStore(redis.Redis.from_url(settings.REDIS_URL))
-llm = make_llm(config)
 kb = KnowledgeBase(
     make_kb_session_factory(config.KB_DATABASE_URL),
     make_embedder(config),
     config.KB_MIN_SCORE,
 )
-log_sf = make_session_factory(config.LOG_DATABASE_URL)
+
+
+@lru_cache(maxsize=1)
+def get_llm():
+    return make_llm(config)
+
+
+class LazyLLM:
+    """Proxy: le vrai client n'est créé qu'au premier appel."""
+
+    def __getattr__(self, name):
+        return getattr(get_llm(), name)
+
+    def __call__(self, *args, **kwargs):
+        return get_llm()(*args, **kwargs)
+
+
+llm = LazyLLM()
 
 router = build_agent_router(
     get_db=get_db,

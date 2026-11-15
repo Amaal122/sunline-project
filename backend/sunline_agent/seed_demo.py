@@ -4,7 +4,8 @@
 
 SAFETY: refuses to run on a PostgreSQL database whose name does not end in _dev or _test, and only
 ever deletes/inserts rows marked as fake (emails @example.test, order numbers DEV-*, slugs dev-*).
-Everything here is invented: names, phones and addresses do not belong to real people."""
+Everything here is invented: names, phones and addresses do not belong to real people.
+"""
 
 import sys
 import uuid
@@ -60,34 +61,32 @@ FAKE = {
     },
 }
 
-PRODUCTS = (
-    [  # (key, name, description, fit keyword, price, variants[(color, size, stock)])
-        (
-            "mom",
-            "Jean Mom Fit Noir",
-            "Jean taille haute coupe mom, denim stretch",
-            "mom",
-            "89.00",
-            [("noir", "36", 4), ("noir", "38", 0), ("noir", "40", 7)],
-        ),
-        (
-            "wide",
-            "Jean Wide Leg Bleu",
-            "Jean large taille haute, denim rigide",
-            "wide",
-            "99.00",
-            [("bleu", "38", 3), ("bleu", "40", 2)],
-        ),
-        (
-            "slim",
-            "Jean Slim Gris",
-            "Jean slim taille normale",
-            "slim",
-            "79.00",
-            [("gris", "36", 0), ("gris", "38", 0)],
-        ),
-    ]
-)
+PRODUCTS = [  # (key, name, description, fit keyword, price, variants[(color, size, stock)])
+    (
+        "mom",
+        "Jean Mom Fit Noir",
+        "Jean taille haute coupe mom, denim stretch",
+        "mom",
+        "89.00",
+        [("noir", "36", 4), ("noir", "38", 0), ("noir", "40", 7)],
+    ),
+    (
+        "wide",
+        "Jean Wide Leg Bleu",
+        "Jean large taille haute, denim rigide",
+        "wide",
+        "99.00",
+        [("bleu", "38", 3), ("bleu", "40", 2)],
+    ),
+    (
+        "slim",
+        "Jean Slim Gris",
+        "Jean slim taille normale",
+        "slim",
+        "79.00",
+        [("gris", "36", 0), ("gris", "38", 0)],
+    ),
+]
 
 
 def _assert_safe(engine):
@@ -135,12 +134,12 @@ def _labels(conn, typname):
 def _pick(labels, wanted):
     if not labels:
         return wanted
-    for label in labels:
-        if label.lower() == wanted.lower():
-            return label
-    for label in labels:
-        if wanted.lower() in label.lower():
-            return label
+    for l in labels:
+        if l.lower() == wanted.lower():
+            return l
+    for l in labels:
+        if wanted.lower() in l.lower():
+            return l
     return labels[0]
 
 

@@ -1,5 +1,6 @@
 """Guards found in real runs: (1) the model answered about an order WITHOUT calling the tool
-(so the lockout never triggered), (2) answers were cut off mid-sentence by the output budget."""
+(so the lockout never triggered), (2) answers were cut off mid-sentence by the output budget.
+"""
 
 import pytest
 from sqlalchemy import select

@@ -50,3 +50,5 @@ out/
 # Accidental local shell/activation command files
 *.ps1
 .venv312/
+
+.venv312/

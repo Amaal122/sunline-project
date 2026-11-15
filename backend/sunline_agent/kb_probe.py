@@ -1,5 +1,6 @@
 """See what the knowledge base returns for a question, with scores.
-Use it to choose KB_MIN_SCORE:  python -m sunline_agent.kb_probe "Quel est le délai de livraison ?" """
+Use it to choose KB_MIN_SCORE:  python -m sunline_agent.kb_probe "Quel est le délai de livraison ?"
+"""
 
 import contextlib
 import sys

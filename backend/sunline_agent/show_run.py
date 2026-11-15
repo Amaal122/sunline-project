@@ -1,7 +1,7 @@
 """Print what the agent did in one run: tools called, what the knowledge base returned, the answer.
 
-    python -m sunline_agent.show_run 26      (a run number)
-    python -m sunline_agent.show_run         (the latest run)
+python -m sunline_agent.show_run 26      (a run number)
+python -m sunline_agent.show_run         (the latest run)
 """
 
 import contextlib
